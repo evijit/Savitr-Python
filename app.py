@@ -33,6 +33,7 @@ def initialize():
             hourlyList = []
             for hour in day[1].groupby(day[1].index.hour):
                 hourlyList.append(hour[1].as_matrix())
+                # PR Comment
             dailyList.append(hourlyList)
         totalList.append(dailyList)
     return np.array(totalList)
