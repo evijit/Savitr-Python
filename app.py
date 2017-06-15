@@ -25,16 +25,12 @@ def initialize():
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
     df.index = df["Date/Time"]
     df.drop("Date/Time", 1, inplace=True)
-
+    df.drop("Base", 1, inplace=True)
     totalList = []
     for month in df.groupby(df.index.month):
         dailyList = []
         for day in month[1].groupby(month[1].index.day):
-            hourlyList = []
-            for hour in day[1].groupby(day[1].index.hour):
-                hourlyList.append(hour[1].as_matrix())
-                # PR Comment
-            dailyList.append(hourlyList)
+            dailyList.append(day[1])
         totalList.append(dailyList)
     return np.array(totalList)
 
@@ -42,19 +38,6 @@ def initialize():
 app.layout = html.Div([
     html.Div([
         html.Div([
-            html.H2("Dash - Uber Data App", style={'margin': 'auto auto'}),
-            html.P("Select different days using the dropdown and the slider\
-                    below or by selecting different time frames on the\
-                    histogram", className="explanationParagraph"),
-            dcc.Checklist(
-                id="mapControls",
-                options=[
-                    {'label': 'Lock Camera', 'value': 'lock'}
-                ],
-                values=[''],
-                labelClassName="mapControls",
-                inputStyle={"z-index": "3"}
-            ),
             html.P(id='total-rides', className="totalRides"),
             html.P(id='total-rides-selection', className="totalRideSelection"),
             html.P(id='date-value', className="dateValue"),
@@ -73,6 +56,10 @@ app.layout = html.Div([
                 className="month-picker"
             ),
             html.Div([
+                html.H2("Dash - Uber Data App"),
+                html.P("Select different days using the dropdown and the slider\
+                        below or by selecting different time frames on the\
+                        histogram", className="explanationParagraph twelve columns"),
                 dcc.Graph(id='map-graph'),
                 dcc.Dropdown(
                     id='bar-selector',
@@ -108,8 +95,9 @@ app.layout = html.Div([
                                  using the dropdown menu",
                     className="bars"
                 ),
-                dcc.Graph(id="histogram")
-            ], className="graph"),
+                dcc.Graph(id="histogram"),
+                html.P("", id="popupAnnotation", className="popupAnnotation"),
+            ], className="graph twelve coluns"),
         ], style={'margin': 'auto auto'}),
         dcc.Slider(
             id="my-slider",
@@ -119,10 +107,17 @@ app.layout = html.Div([
         ),
         dcc.Markdown("Source: [FiveThirtyEight](https://github.com/fivethirtyeight/uber-tlc-foil-response/tree/master/uber-trip-data)",
                      className="source"),
-        html.P("", id="popupAnnotation", className="popupAnnotation")
-    ], className="graphSlider ten columns offset-by-one",
-       style={"padding": "0px 0px"}),
-], style={"padding-bottom": "100px"})
+        dcc.Checklist(
+            id="mapControls",
+            options=[
+                {'label': 'Lock Camera', 'value': 'lock'}
+            ],
+            values=[''],
+            labelClassName="mapControls",
+            inputStyle={"z-index": "3"}
+        ),
+    ], className="graphSlider ten columns offset-by-one"),
+], style={"padding-top": "20px"})
 
 
 def getValue(value):
@@ -177,6 +172,14 @@ def update_slider_max(value):
 
 
 @app.callback(Output("bar-selector", "value"),
+              [], [State("bar-selector", "value")],
+              [Event("bar-selector", "change")])
+def update_bar_selector(value):
+    print("WE GOT TO THIS POINT")
+    return value.sort()
+
+
+@app.callback(Output("bar-selector", "value"),
               [Input("histogram", "selectedData")])
 def update_bar_selector(value):
     holder = []
@@ -191,8 +194,7 @@ def update_bar_selector(value):
               [Input("my-dropdown", "value"), Input('my-slider', 'value')])
 def update_total_rides(value, slider_value):
     return ("Total # of rides: {:,d}"
-            .format(sum(len(days)
-                    for days in totalList[getIndex(value)][slider_value-1])))
+            .format(len(totalList[getIndex(value)][slider_value-1])))
 
 
 @app.callback(Output("total-rides-selection", "children"),
@@ -204,7 +206,9 @@ def update_total_rides_selection(value, slider_value, selection):
     totalInSelction = 0
     for x in selection:
         totalInSelction += len(totalList[getIndex(value)]
-                                        [slider_value-1][int(x)])
+                                        [slider_value-1]
+                                        [totalList[getIndex(value)]
+                                                [slider_value-1].index.hour == int(x)])
     return ("Total rides in selection: {:,d}"
             .format(totalInSelction))
 
@@ -230,10 +234,8 @@ def update_date(value, slider_value, selection):
     for h in holder:
         if(holder.index(h) == (len(holder)-1)):
             x += str(h)
-            print("First if: ", x)
         else:
             x += str(h) + ", "
-            print("Else statement: ", x)
     return (value, " ", slider_value, " - showing hour(s): ", x)
 
 
@@ -256,21 +258,22 @@ def get_selection(value, slider_value, selection):
     xVal = []
     yVal = []
     xSelected = []
-    colorVal = []
-    if(selection is not None or len(selection) is not 0):
+    colorVal = ["#003A80", "#0D498B", "#1A5896", "#2767A2", "#3476AD", "#4185B9",
+                "#4E95C4", "#5BA3D0", "#68B2DB", "#75C1E7", "#82D0F2", "#90DFFE",
+                "#ADE8FF", "#9DD8F3", "#8DC8E7", "#7DB8DC", "#6EA8D0", "#5E98C5",
+                "#4E89B9", "#3E79AE", "#2F69A2", "#1F5997", "#0F498B", "003A80"]
+    if(selection is not None):
         for x in selection:
             xSelected.append(int(x))
-    colorPickerRed = 219
-    colorPickerGreen = 231
     for i in range(0, 24, 1):
         if i in xSelected and len(xSelected) < 24:
-            colorVal.append('#ff9719')
-        else:
-            colorVal.append(('rgb( %d, %d, 255)' % (colorPickerRed-i*5, colorPickerGreen-i*5)))
+            colorVal[i] = ('#FFFFFF')
         xVal.append(i)
-        yVal.append(len(totalList[getIndex(value)][slider_value-1][i]))
+        yVal.append(len(totalList[getIndex(value)][slider_value-1]
+                    [totalList[getIndex(value)][slider_value-1].index.hour == i]))
 
-    return [xVal, yVal, xSelected, colorVal]
+    return [np.array(xVal), np.array(yVal), np.array(xSelected),
+            np.array(colorVal)]
 
 
 
@@ -283,7 +286,7 @@ def update_histogram(value, slider_value, selection):
                                                       selection)
 
     layout = go.Layout(
-        bargap=0,
+        bargap=0.01,
         bargroupgap=0,
         barmode='group',
         margin=Margin(l=10, r=0, t=0, b=30),
@@ -300,6 +303,7 @@ def update_histogram(value, slider_value, selection):
             ticksuffix=":00"
         ),
         yaxis=dict(
+            range=[0, max(yVal)+max(yVal)/4],
             showticklabels=False,
             showgrid=False,
             fixedrange=True,
@@ -331,13 +335,13 @@ def update_histogram(value, slider_value, selection):
                 go.Scatter(
                     opacity=0,
                     x=xVal,
-                    y=yVal,
+                    y=yVal/2,
                     hoverinfo="none",
                     mode='markers',
                     marker=Marker(
                         color='rgb(66, 134, 244, 0)',
                         symbol="square",
-                        size=20
+                        size=40
                     ),
                     visible=True
                 )
@@ -345,34 +349,22 @@ def update_histogram(value, slider_value, selection):
 
 
 def get_lat_lon_color(selectedData, value, slider_value):
-    lonVal = []
-    latVal = []
-    colorVal = []
-    text = []
-    colorVal.append(0)
+    listStr = "totalList[getIndex(value)][slider_value-1]"
     if(selectedData is None or len(selectedData) is 0):
-        for i in range(0, 24):
-            for k in range(0, len(totalList[getIndex(value)][slider_value-1][i])):
-                latVal.append(round(totalList[getIndex(value)]
-                                    [slider_value-1][i][k][0], 4))
-                lonVal.append(round(totalList[getIndex(value)]
-                                    [slider_value-1][i][k][1], 4))
-                colorVal.append(i)
-                text.append("Hour: " + str(i) + ":00")
-        print len(latVal)
-        print len(colorVal)
+        return listStr
+    elif(int(selectedData[len(selectedData)-1])-int(selectedData[0])+2 == len(selectedData)+1 and len(selectedData) > 2):
+        listStr += "[(totalList[getIndex(value)][slider_value-1].index.hour>"+str(int(selectedData[0]))+") & \
+                    (totalList[getIndex(value)][slider_value-1].index.hour<" + str(int(selectedData[len(selectedData)-1]))+")]"
+        print("ELSE IF TRIGGERED")
     else:
+        listStr += "["
         for point in selectedData:
-            for k in range(0, len(totalList[getIndex(value)][slider_value-1]
-                                           [int(point)])):
-                latVal.append(totalList[getIndex(value)][slider_value-1]
-                                       [int(point)][k][0])
-                lonVal.append(totalList[getIndex(value)][slider_value-1]
-                                       [int(point)][k][1])
-                colorVal.append(int(point))
-                text.append("Hour: " + str(point) + ":00")
-    colorVal.append(23)
-    return [latVal, lonVal, colorVal, text]
+            if (selectedData.index(point) is not len(selectedData)-1):
+                listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ") | "
+            else:
+                listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ")]"
+    print(listStr)
+    return listStr
 
 
 @app.callback(Output("map-graph", "figure"),
@@ -386,8 +378,8 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
     lonInitial = -73.991251
     bearing = 0
     print("Prev layout ", prevLayout)
-    [latVal, lonVal, colorVal, text] = get_lat_lon_color(selectedData, value,
-                                                         slider_value)
+    listStr = get_lat_lon_color(selectedData, value, slider_value)
+    # print("Point selection from list: ", totalList[getIndex(value)][slider_value-1][pointSelection, :])
     if(prevLayout is not None and mapControls is not None and
        'lock' in mapControls):
         zoom = float(prevLayout['mapbox']['zoom'])
@@ -397,16 +389,13 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
     return go.Figure(
         data=Data([
             Scattermapbox(
-                lat=latVal,
-                lon=lonVal,
+                lat=eval(listStr)['Lat'],
+                lon=eval(listStr)['Lon'],
                 mode='markers',
                 hoverinfo="lat+lon+text",
-                text=text,
-                stream=dict(
-                    maxpoints=10,
-                ),
+                text=eval(listStr).index.hour,
                 marker=Marker(
-                    color=colorVal,
+                    color=np.append(np.insert(eval(listStr).index.hour, 0, 0), 23),
                     colorscale=[[0, "#F4EC15"], [0.04167, "#DAF017"],
                                 [0.0833, "#BBEC19"], [0.125, "9DE81B"],
                                 [0.1667, "#80E41D"], [0.2083, "#66E01F"],
@@ -453,7 +442,8 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                       "United Nations HQ"],
                 # opacity=0.5,
                 marker=Marker(
-                    size=7
+                    size=6,
+                    color="#ffa0a0"
                 ),
             ),
         ]),
@@ -619,4 +609,4 @@ def defineTotalList():
 
 
 if __name__ == '__main__':
-    app.run_server(use_reloader=False)
+    app.run_server(debug=True)
