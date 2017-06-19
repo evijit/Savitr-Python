@@ -13,7 +13,7 @@ import os
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
 
-app = dash.Dash('UberApp', server=server)
+app = dash.Dash('UberApp', server=server, url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
 
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
