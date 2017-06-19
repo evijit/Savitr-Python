@@ -8,18 +8,16 @@ from plotly.graph_objs import *
 from flask import Flask
 import pandas as pd
 import numpy as np
-server = Flask('my app')
-server.secret_key = 'secret'
+import os
 
-app = dash.Dash('UberApp', server=server)
+server = Flask('my app')
+server.secret_key = os.environ.get('secret_key', 'secret')
+
+app = dash.Dash('UberApp', server=server, url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
 
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
-# https://www.dropbox.com/s/vxe7623o7eqbe6n/output.csv?dl=1
-# /home/alishobeiri/Plotly/UberDashApp/output.csv
-
 def initialize():
-    print("entered here")
     df = pd.read_csv('output.csv')
     df.drop("Unnamed: 0", 1, inplace=True)
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
@@ -161,7 +159,6 @@ def update_slider_ticks(value):
             marks.update({i: '{} {}'.format(value, i)})
         else:
             marks.update({i: '{}'.format(i)})
-    # marks = {i: '{}'.format(i) for i in range(1, getValue(value)+1, 1)}
     return marks
 
 
@@ -175,7 +172,6 @@ def update_slider_max(value):
               [], [State("bar-selector", "value")],
               [Event("bar-selector", "change")])
 def update_bar_selector(value):
-    print("WE GOT TO THIS POINT")
     return value.sort()
 
 
@@ -355,7 +351,6 @@ def get_lat_lon_color(selectedData, value, slider_value):
     elif(int(selectedData[len(selectedData)-1])-int(selectedData[0])+2 == len(selectedData)+1 and len(selectedData) > 2):
         listStr += "[(totalList[getIndex(value)][slider_value-1].index.hour>"+str(int(selectedData[0]))+") & \
                     (totalList[getIndex(value)][slider_value-1].index.hour<" + str(int(selectedData[len(selectedData)-1]))+")]"
-        print("ELSE IF TRIGGERED")
     else:
         listStr += "["
         for point in selectedData:
@@ -363,7 +358,6 @@ def get_lat_lon_color(selectedData, value, slider_value):
                 listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ") | "
             else:
                 listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ")]"
-    print(listStr)
     return listStr
 
 
@@ -377,9 +371,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
     latInitial = 40.7272
     lonInitial = -73.991251
     bearing = 0
-    print("Prev layout ", prevLayout)
     listStr = get_lat_lon_color(selectedData, value, slider_value)
-    # print("Point selection from list: ", totalList[getIndex(value)][slider_value-1][pointSelection, :])
     if(prevLayout is not None and mapControls is not None and
        'lock' in mapControls):
         zoom = float(prevLayout['mapbox']['zoom'])
@@ -404,10 +396,6 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                                 [0.4167, "#26CC58"], [0.4583, "#28C86D"],
                                 [0.50, "#29C481"], [0.54167, "#2AC093"],
                                 [0.5833, "#2BBCA4"], #[0.625, "#2CB8B4"],
-                                # [0.6667, "#70C5FF"], #[0.7083, "#2E91B0"],
-#                                [0.75, "#2F7EAC"], [0.792, "#306BA8"],
-#                                [0.833, "#305AA4"], [0.875, "#314AA0"],
-#                                [0.9167, "#314AA0"], [0.9583, "313B9C"],
                                 [1.0, "#613099"]],
                     opacity=0.5,
                     size=5,
@@ -598,8 +586,6 @@ external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.
 
 for css in external_css:
     app.css.append_css({"external_url": css})
-
-# Run the server
 
 
 @app.server.before_first_request
