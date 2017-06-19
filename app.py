@@ -154,8 +154,6 @@ def update_slider_ticks(value):
     marks = {}
     for i in range(1, getValue(value)+1, 1):
         if(i is 1 or i is getValue(value)):
-            print(marks)
-            print("we here")
             marks.update({i: '{} {}'.format(value, i)})
         else:
             marks.update({i: '{}'.format(i)})
@@ -214,7 +212,6 @@ def update_date(value, slider_value, selection):
     for x in selection:
         holder.append(int(x))
     holder.sort()
-    print("Array value ", holder)
     if(holder[len(holder)-1]-holder[0]+2 == len(holder)+1 and len(holder) > 2):
         return (value, " ", slider_value, " - showing hour(s): ",
                 holder[0], "-", holder[len(holder)-1])
