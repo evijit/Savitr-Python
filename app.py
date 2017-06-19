@@ -8,8 +8,10 @@ from plotly.graph_objs import *
 from flask import Flask
 import pandas as pd
 import numpy as np
+import os
+
 server = Flask('my app')
-server.secret_key = 'secret'
+server.secret_key = os.environ.get('secret_key', 'secret')
 
 app = dash.Dash('UberApp', server=server)
 
