@@ -169,13 +169,6 @@ def update_slider_max(value):
 
 
 @app.callback(Output("bar-selector", "value"),
-              [], [State("bar-selector", "value")],
-              [Event("bar-selector", "change")])
-def update_bar_selector(value):
-    return value.sort()
-
-
-@app.callback(Output("bar-selector", "value"),
               [Input("histogram", "selectedData")])
 def update_bar_selector(value):
     holder = []
