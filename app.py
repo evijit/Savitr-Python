@@ -13,7 +13,7 @@ import os
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
 
-app = dash.Dash('UberApp', server=server()# , url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
+app = dash.Dash('UberApp', server=server(), url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
 
 if 'DYNO' in os.environ:
     app.scripts.append_script({
