@@ -10,5 +10,5 @@ To learn more check out our [documentation](https://plot.ly/dash).
 
 The following are screenshots for the app in this repo:
 
-![Alt desc](https://cdn.rawgit.com/plotly/dash-uber-rides-demo/master/Screenshot/Dash-Uber-Screenshot.png?token=ARkbw8hVXnQ2kKMJy4PuaZG4_OwxXXZAks5ZUndfwA%3D%3D)
+![Alt desc](https://cdn.rawgit.com/plotly/dash-uber-rides-demo/master/Screenshot/Screenshot.png?token=ARkbw9CF0svSiJoKX9L0g7mtKQ5cW8V4ks5ZUsO9wA%3D%3D)
 
