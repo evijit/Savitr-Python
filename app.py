@@ -13,7 +13,7 @@ import os
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
 
-app = dash.Dash('UberApp', server=server) # , url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
+app = dash.Dash('UberApp', server=server, url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
 
 if 'DYNO' in os.environ:
     app.scripts.append_script({
@@ -25,7 +25,7 @@ if 'DYNO' in os.environ:
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
 def initialize():
-    df = pd.read_csv('output.csv')
+    df = pd.read_csv('https://media.githubusercontent.com/media/plotly/dash-uber-rides-demo/master/output.csv?token=ARkbw-CIXSR-iczXj2zZagdLSvaNhIKUks5ZSVuswA%3D%3D')
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
     df.index = df["Date/Time"]
     df.drop("Date/Time", 1, inplace=True)
