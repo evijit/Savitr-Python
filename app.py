@@ -25,7 +25,7 @@ mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcG
 
 
 def initialize():
-    df = pd.read_csv('https://media.githubusercontent.com/media/plotly/dash-uber-rides-demo/master/output.csv?token=ARkbw4tf3U2427BBNSlQf42KhnVYNrWZks5ZSV8ZwA%3D%3D')
+    df = pd.read_csv('output.csv')
     df.drop("Unnamed: 0", 1, inplace=True)
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
     df.index = df["Date/Time"]
@@ -61,7 +61,18 @@ app.layout = html.Div([
                 className="month-picker"
             ),
             html.Div([
-                html.H2("Dash - Uber Data App"),
+                html.Div([
+                    html.H2("Dash - Uber Data App", style={'font-family': 'Dosis'}),
+                    html.Img(src="https://cdn.rawgit.com/plotly/design-assets/master/logo/dash/images/dash-logo-by-plotly-stripe.png?token=ARkbw71c0vCS8Jnau4bHOoc9HRF_lZAtks5ZUrwDwA%3D%3D",
+                            style={
+                                'height': '100px',
+                                'float': 'right',
+                                'position': 'relative',
+                                'bottom': '145px',
+                                'left': '5px'
+                            },
+                    ),
+                ]),
                 html.P("Select different days using the dropdown and the slider\
                         below or by selecting different time frames on the\
                         histogram", className="explanationParagraph twelve columns"),
@@ -583,6 +594,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
 
 external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
                 "//fonts.googleapis.com/css?family=Raleway:400,300,600",
+                "//fonts.googleapis.com/css?family=Dosis:Medium",
                 "https://cdn.rawgit.com/plotly/dash-app-stylesheets/master/dash-uber-ride-demo.css",
                 "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
 
