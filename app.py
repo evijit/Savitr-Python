@@ -25,7 +25,7 @@ if 'DYNO' in os.environ:
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
 def initialize():
-    df = pd.read_csv('Data/output.csv')
+    df = pd.read_csv('output.csv')
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
     df.index = df["Date/Time"]
     df.drop("Date/Time", 1, inplace=True)
