@@ -15,6 +15,13 @@ server.secret_key = os.environ.get('secret_key', 'secret')
 
 app = dash.Dash('UberApp', server=server, url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
 
+if 'DYNO' in os.environ:
+    app.scripts.append_script({
+        'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
+    })
+
+
+
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
 def initialize():
@@ -212,6 +219,7 @@ def update_date(value, slider_value, selection):
     for x in selection:
         holder.append(int(x))
     holder.sort()
+
     if(holder[len(holder)-1]-holder[0]+2 == len(holder)+1 and len(holder) > 2):
         return (value, " ", slider_value, " - showing hour(s): ",
                 holder[0], "-", holder[len(holder)-1])
@@ -244,10 +252,12 @@ def get_selection(value, slider_value, selection):
     xVal = []
     yVal = []
     xSelected = []
-    colorVal = ["#003A80", "#0D498B", "#1A5896", "#2767A2", "#3476AD", "#4185B9",
-                "#4E95C4", "#5BA3D0", "#68B2DB", "#75C1E7", "#82D0F2", "#90DFFE",
-                "#ADE8FF", "#9DD8F3", "#8DC8E7", "#7DB8DC", "#6EA8D0", "#5E98C5",
-                "#4E89B9", "#3E79AE", "#2F69A2", "#1F5997", "#0F498B", "003A80"]
+
+    colorVal = ["#F4EC15", "#DAF017", "#BBEC19", "#9DE81B", "#80E41D", "#66E01F",
+                "#4CDC20", "#34D822", "#24D249", "#25D042", "#26CC58", "#28C86D",
+                "#29C481", "#2AC093", "#2BBCA4", "#2BB5B8", "#2C99B4", "#2D7EB0",
+                "#2D65AC", "#2E4EA4", "#2E38A4", "#3B2FA0", "#4E2F9C", "#603099"]
+
     if(selection is not None):
         for x in selection:
             xSelected.append(int(x))
@@ -348,6 +358,7 @@ def get_lat_lon_color(selectedData, value, slider_value):
                 listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ") | "
             else:
                 listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ")]"
+
     return listStr
 
 
@@ -361,7 +372,9 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
     latInitial = 40.7272
     lonInitial = -73.991251
     bearing = 0
+
     listStr = get_lat_lon_color(selectedData, value, slider_value)
+
     if(prevLayout is not None and mapControls is not None and
        'lock' in mapControls):
         zoom = float(prevLayout['mapbox']['zoom'])
@@ -385,7 +398,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                                 [0.333, "#24D249"], [0.375, "#25D042"],
                                 [0.4167, "#26CC58"], [0.4583, "#28C86D"],
                                 [0.50, "#29C481"], [0.54167, "#2AC093"],
-                                [0.5833, "#2BBCA4"], #[0.625, "#2CB8B4"],
+                                [0.5833, "#2BBCA4"],
                                 [1.0, "#613099"]],
                     opacity=0.5,
                     size=5,
@@ -570,7 +583,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
 
 external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
                 "//fonts.googleapis.com/css?family=Raleway:400,300,600",
-                "https://codepen.io/alishobeiri/pen/GERKax.css?v=plotly",
+                "https://cdn.rawgit.com/plotly/dash-app-stylesheets/master/dash-uber-ride-demo.css",
                 "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
 
 
