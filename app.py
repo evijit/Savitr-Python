@@ -595,7 +595,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
 external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
                 "//fonts.googleapis.com/css?family=Raleway:400,300,600",
                 "//fonts.googleapis.com/css?family=Dosis:Medium",
-                "https://cdn.rawgit.com/plotly/dash-app-stylesheets/master/dash-uber-ride-demo.css",
+                "https://cdn.rawgit.com/plotly/dash-app-stylesheets/62f0eb4f1fadbefea64b2404493079bf848974e8/dash-uber-ride-demo.css",
                 "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
 
 
