@@ -63,7 +63,7 @@ app.layout = html.Div([
             html.Div([
                 html.Div([
                     html.H2("Dash - Uber Data App", style={'font-family': 'Dosis'}),
-                    html.Img(src="https://cdn.rawgit.com/plotly/design-assets/master/logo/dash/images/dash-logo-by-plotly-stripe.png?token=ARkbw71c0vCS8Jnau4bHOoc9HRF_lZAtks5ZUrwDwA%3D%3D",
+                    html.Img(src="https://cdn.rawgit.com/plotly/dash-app-stylesheets/ce288b65da310bf7a9efe39487061c4b90697fa2/dash-logo-by-plotly-stripe.png",
                             style={
                                 'height': '100px',
                                 'float': 'right',
