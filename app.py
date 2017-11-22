@@ -13,7 +13,7 @@ import os
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
 
-app = dash.Dash('UberApp', server=server, url_base_pathname='/dash/gallery/uber-rides/', csrf_protect=False)
+app = dash.Dash('SavitrApp', server=server, url_base_pathname='/', csrf_protect=False)
 
 if 'DYNO' in os.environ:
     app.scripts.append_script({
@@ -25,19 +25,25 @@ mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcG
 
 
 def initialize():
-    df = pd.read_csv('https://www.dropbox.com/s/vxe7623o7eqbe6n/output.csv?dl=1')
-    df.drop("Unnamed: 0", 1, inplace=True)
-    df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
-    df.index = df["Date/Time"]
-    df.drop("Date/Time", 1, inplace=True)
-    df.drop("Base", 1, inplace=True)
+    ##df = pd.read_csv('https://www.dropbox.com/s/vxe7623o7eqbe6n/output.csv?dl=1')
+    # df = pd.read_csv('data/output.csv')
+    # df.drop("Unnamed: 0", 1, inplace=True)
+    # df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
+    # df.index = df["Date/Time"]
+    # df.drop("Date/Time", 1, inplace=True)
+    # df.drop("Base", 1, inplace=True)
+    df = pd.read_csv('data/tweets.csv')
+    df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
+    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
+    df.index = df["date"]
+    df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
     totalList = []
     for month in df.groupby(df.index.month):
         dailyList = []
         for day in month[1].groupby(month[1].index.day):
             dailyList.append(day[1])
         totalList.append(dailyList)
-    return np.array(totalList)
+    return totalList
 
 
 app.layout = html.Div([
@@ -62,16 +68,16 @@ app.layout = html.Div([
             ),
             html.Div([
                 html.Div([
-                    html.H2("Dash - Uber Data App", style={'font-family': 'Dosis'}),
-                    html.Img(src="https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png",
-                            style={
-                                'height': '100px',
-                                'float': 'right',
-                                'position': 'relative',
-                                'bottom': '145px',
-                                'left': '5px'
-                            },
-                    ),
+                    html.H2("Savitr", style={'font-family': 'Dosis'}),
+                    # html.Img(src="https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png",
+                    #         style={
+                    #             'height': '100px',
+                    #             'float': 'right',
+                    #             'position': 'relative',
+                    #             'bottom': '145px',
+                    #             'left': '5px'
+                    #         },
+                    # ),
                 ]),
                 html.P("Select different days using the dropdown and the slider\
                         below or by selecting different time frames on the\
@@ -121,17 +127,17 @@ app.layout = html.Div([
             step=1,
             value=1
         ),
-        dcc.Markdown("Source: [FiveThirtyEight](https://github.com/fivethirtyeight/uber-tlc-foil-response/tree/master/uber-trip-data)",
-                     className="source"),
-        dcc.Checklist(
-            id="mapControls",
-            options=[
-                {'label': 'Lock Camera', 'value': 'lock'}
-            ],
-            values=[''],
-            labelClassName="mapControls",
-            inputStyle={"z-index": "3"}
-        ),
+        # dcc.Markdown("Source: [FiveThirtyEight](https://github.com/fivethirtyeight/uber-tlc-foil-response/tree/master/uber-trip-data)",
+        #              className="source"),
+        # dcc.Checklist(
+        #     id="mapControls",
+        #     options=[
+        #         {'label': 'Lock Camera', 'value': 'lock'}
+        #     ],
+        #     values=[''],
+        #     labelClassName="mapControls",
+        #     inputStyle={"z-index": "3"}
+        # ),
     ], className="graphSlider ten columns offset-by-one"),
 ], style={"padding-top": "20px"})
 
@@ -198,7 +204,7 @@ def update_bar_selector(value):
 @app.callback(Output("total-rides", "children"),
               [Input("my-dropdown", "value"), Input('my-slider', 'value')])
 def update_total_rides(value, slider_value):
-    return ("Total # of rides: {:,d}"
+    return ("Total # of tweets: {:,d}"
             .format(len(totalList[getIndex(value)][slider_value-1])))
 
 
@@ -214,7 +220,7 @@ def update_total_rides_selection(value, slider_value, selection):
                                         [slider_value-1]
                                         [totalList[getIndex(value)]
                                                 [slider_value-1].index.hour == int(x)])
-    return ("Total rides in selection: {:,d}"
+    return ("Total tweets in selection: {:,d}"
             .format(totalInSelction))
 
 
@@ -298,7 +304,7 @@ def update_histogram(value, slider_value, selection):
         barmode='group',
         margin=Margin(l=10, r=0, t=0, b=30),
         showlegend=False,
-        plot_bgcolor='#323130',
+        plot_bgcolor='#ffffff',
         paper_bgcolor='rgb(66, 134, 244, 0)',
         height=250,
         dragmode="select",
@@ -324,7 +330,7 @@ def update_histogram(value, slider_value, selection):
                  yanchor='bottom',
                  showarrow=False,
                  font=dict(
-                    color='white'
+                    color='black'
                  ),
                  ) for xi, yi in zip(xVal, yVal)],
     )
@@ -376,12 +382,14 @@ def get_lat_lon_color(selectedData, value, slider_value):
 @app.callback(Output("map-graph", "figure"),
               [Input("my-dropdown", "value"), Input('my-slider', 'value'),
               Input("bar-selector", "value")],
-              [State('map-graph', 'relayoutData'),
-               State('mapControls', 'values')])
-def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
-    zoom = 12.0
-    latInitial = 40.7272
-    lonInitial = -73.991251
+              [State('map-graph', 'relayoutData')])
+              # ,
+              #  State('mapControls', 'values')])
+def update_graph(value, slider_value, selectedData, prevLayout):
+    mapControls = None
+    zoom = 4.0
+    latInitial = 21.146633
+    lonInitial = 79.088860
     bearing = 0
 
     listStr = get_lat_lon_color(selectedData, value, slider_value)
@@ -398,8 +406,8 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                 lat=eval(listStr)['Lat'],
                 lon=eval(listStr)['Lon'],
                 mode='markers',
-                hoverinfo="lat+lon+text",
-                text=eval(listStr).index.hour,
+                hoverinfo="text",
+                text=eval(listStr)['t'],
                 marker=Marker(
                     color=np.append(np.insert(eval(listStr).index.hour, 0, 0), 23),
                     colorscale=[[0, "#F4EC15"], [0.04167, "#DAF017"],
@@ -412,7 +420,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                                 [0.5833, "#2BBCA4"],
                                 [1.0, "#613099"]],
                     opacity=0.5,
-                    size=5,
+                    size=15,
                     colorbar=dict(
                         thicknessmode="fraction",
                         title="Time of<br>Day",
@@ -420,34 +428,34 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                         xpad=0,
                         nticks=24,
                         tickfont=dict(
-                            color='white'
+                            color='black'
                         ),
                         titlefont=dict(
-                            color='white'
+                            color='black'
                         ),
                         titleside='left'
                         )
                 ),
             ),
-            Scattermapbox(
-                lat=["40.7505", "40.8296", "40.7484", "40.7069", "40.7527",
-                     "40.7127", "40.7589", "40.8075", "40.7489"],
-                lon=["-73.9934", "-73.9262", "-73.9857", "-74.0113",
-                     "-73.9772", "-74.0134", "-73.9851", "-73.9626",
-                     "-73.9680"],
-                mode='markers',
-                hoverinfo="text",
-                text=["Madison Square Garden", "Yankee Stadium",
-                      "Empire State Building", "New York Stock Exchange",
-                      "Grand Central Station", "One World Trade Center",
-                      "Times Square", "Columbia University",
-                      "United Nations HQ"],
-                # opacity=0.5,
-                marker=Marker(
-                    size=6,
-                    color="#ffa0a0"
-                ),
-            ),
+            # Scattermapbox(
+            #     lat=["40.7505", "40.8296", "40.7484", "40.7069", "40.7527",
+            #          "40.7127", "40.7589", "40.8075", "40.7489"],
+            #     lon=["-73.9934", "-73.9262", "-73.9857", "-74.0113",
+            #          "-73.9772", "-74.0134", "-73.9851", "-73.9626",
+            #          "-73.9680"],
+            #     mode='markers',
+            #     hoverinfo="text",
+            #     text=["Madison Square Garden", "Yankee Stadium",
+            #           "Empire State Building", "New York Stock Exchange",
+            #           "Grand Central Station", "One World Trade Center",
+            #           "Times Square", "Columbia University",
+            #           "United Nations HQ"],
+            #     # opacity=0.5,
+            #     marker=Marker(
+            #         size=6,
+            #         color="#ffa0a0"
+            #     ),
+            # ),
         ]),
         layout=Layout(
             autosize=True,
@@ -460,7 +468,7 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                     lat=latInitial, # 40.7272
                     lon=lonInitial # -73.991251
                 ),
-                style='dark',
+                style='light',
                 bearing=bearing,
                 zoom=zoom
             ),
@@ -469,11 +477,11 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                     buttons=([
                         dict(
                             args=[{
-                                    'mapbox.zoom': 12,
-                                    'mapbox.center.lon': '-73.991251',
-                                    'mapbox.center.lat': '40.7272',
+                                    'mapbox.zoom': 4,
+                                    'mapbox.center.lon': '79.088860',
+                                    'mapbox.center.lat': '21.146633',
                                     'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
+                                    'mapbox.style': 'light'
                                 }],
                             label='Reset Zoom',
                             method='relayout'
@@ -486,107 +494,107 @@ def update_graph(value, slider_value, selectedData, prevLayout, mapControls):
                     x=0.45,
                     xanchor='left',
                     yanchor='bottom',
-                    bgcolor='#323130',
+                    bgcolor='white',
                     borderwidth=1,
                     bordercolor="#6d6d6d",
                     font=dict(
-                        color="#FFFFFF"
+                        color="black"
                     ),
                     y=0.02
                 ),
-                dict(
-                    buttons=([
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-73.9934',
-                                    'mapbox.center.lat': '40.7505',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='Madison Square Garden',
-                            method='relayout'
-                        ),
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-73.9262',
-                                    'mapbox.center.lat': '40.8296',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='Yankee Stadium',
-                            method='relayout'
-                        ),
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-73.9857',
-                                    'mapbox.center.lat': '40.7484',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='Empire State Building',
-                            method='relayout'
-                        ),
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-74.0113',
-                                    'mapbox.center.lat': '40.7069',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='New York Stock Exchange',
-                            method='relayout'
-                        ),
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-73.785607',
-                                    'mapbox.center.lat': '40.644987',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='JFK Airport',
-                            method='relayout'
-                        ),
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-73.9772',
-                                    'mapbox.center.lat': '40.7527',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='Grand Central Station',
-                            method='relayout'
-                        ),
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 15,
-                                    'mapbox.center.lon': '-73.9851',
-                                    'mapbox.center.lat': '40.7589',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'dark'
-                                }],
-                            label='Times Square',
-                            method='relayout'
-                        )
-                    ]),
-                    direction="down",
-                    pad={'r': 0, 't': 0, 'b': 0, 'l': 0},
-                    showactive=False,
-                    bgcolor="rgb(50, 49, 48, 0)",
-                    type='buttons',
-                    yanchor='bottom',
-                    xanchor='left',
-                    font=dict(
-                        color="#FFFFFF"
-                    ),
-                    x=0,
-                    y=0.05
-                )
+                #dict(
+                    # buttons=([
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-73.9934',
+                    #                 'mapbox.center.lat': '40.7505',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='Madison Square Garden',
+                    #         method='relayout'
+                    #     ),
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-73.9262',
+                    #                 'mapbox.center.lat': '40.8296',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='Yankee Stadium',
+                    #         method='relayout'
+                    #     ),
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-73.9857',
+                    #                 'mapbox.center.lat': '40.7484',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='Empire State Building',
+                    #         method='relayout'
+                    #     ),
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-74.0113',
+                    #                 'mapbox.center.lat': '40.7069',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='New York Stock Exchange',
+                    #         method='relayout'
+                    #     ),
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-73.785607',
+                    #                 'mapbox.center.lat': '40.644987',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='JFK Airport',
+                    #         method='relayout'
+                    #     ),
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-73.9772',
+                    #                 'mapbox.center.lat': '40.7527',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='Grand Central Station',
+                    #         method='relayout'
+                    #     ),
+                    #     dict(
+                    #         args=[{
+                    #                 'mapbox.zoom': 15,
+                    #                 'mapbox.center.lon': '-73.9851',
+                    #                 'mapbox.center.lat': '40.7589',
+                    #                 'mapbox.bearing': 0,
+                    #                 'mapbox.style': 'dark'
+                    #             }],
+                    #         label='Times Square',
+                    #         method='relayout'
+                    #     )
+                    # ]),
+                #     direction="down",
+                #     pad={'r': 0, 't': 0, 'b': 0, 'l': 0},
+                #     showactive=False,
+                #     bgcolor="rgb(50, 49, 48, 0)",
+                #     type='buttons',
+                #     yanchor='bottom',
+                #     xanchor='left',
+                #     font=dict(
+                #         color="#FFFFFF"
+                #     ),
+                #     x=0,
+                #     y=0.05
+                # )
             ]
         )
     )
