@@ -53,19 +53,15 @@ app.layout = html.Div([
             html.P(id='total-rides-selection', className="totalRideSelection"),
             html.P(id='date-value', className="dateValue"),
             dcc.Dropdown(
-                id='my-dropdown',
-                options=[
-                    {'label': 'April 2014', 'value': 'Apr'},
-                    {'label': 'May 2014', 'value': 'May'},
-                    {'label': 'June 2014', 'value': 'June'},
-                    {'label': 'July 2014', 'value': 'July'},
-                    {'label': 'Aug 2014', 'value': 'Aug'},
-                    {'label': 'Sept 2014', 'value': 'Sept'}
-                ],
-                value="Apr",
-                placeholder="Please choose a month",
-                className="month-picker"
-            ),
+                    id='search-bar',
+                    options=[
+                        {'label': 'Flood', 'value': '0'},
+                        {'label': 'Dengue', 'value': '1'}
+                    ],
+                    multi=True,
+                    placeholder="Choose Situation",
+                    className="bars"
+                ),
             html.Div([
                 html.Div([
                     html.H2("Savitr", style={'font-family': 'Dosis'}),
@@ -79,10 +75,19 @@ app.layout = html.Div([
                     #         },
                     # ),
                 ]),
-                html.P("Select different days using the dropdown and the slider\
-                        below or by selecting different time frames on the\
-                        histogram", className="explanationParagraph twelve columns"),
+                html.P("Disaster mapping using Twitter", className="explanationParagraph twelve columns"),
                 dcc.Graph(id='map-graph'),
+            dcc.Dropdown(
+                id='my-dropdown',
+                options=[
+                    {'label': 'Sept 2017', 'value': 'Sept'},
+                    {'label': 'Oct 2017', 'value': 'Oct'}
+                ],
+                value="Sept",
+                placeholder="Please choose a month",
+                className="month-picker"
+            ),
+            
                 dcc.Dropdown(
                     id='bar-selector',
                     options=[
@@ -144,25 +149,25 @@ app.layout = html.Div([
 
 def getValue(value):
     val = {
-        'Apr': 30,
-        'May': 31,
-        'June': 30,
-        'July': 31,
-        'Aug': 31,
-        'Sept': 30
+        'Sept': 30,
+        'Oct': 13
     }[value]
     return val
+
+def getValue_start(value):
+    val = {
+        'Sept': 12,
+        'Oct': 1
+    }[value]
+    return val
+
 
 def getIndex(value):
     if(value==None):
         return 0
     val = {
-        'Apr': 0,
-        'May': 1,
-        'June': 2,
-        'July': 3,
-        'Aug': 4,
-        'Sept': 5
+        'Sept': 0,
+        'Oct': 1
     }[value]
     return val
 
@@ -176,18 +181,18 @@ def getClickIndex(value):
               [Input("my-dropdown", "value")])
 def update_slider_ticks(value):
     marks = {}
-    for i in range(1, getValue(value)+1, 1):
-        if(i is 1 or i is getValue(value)):
-            marks.update({i: '{} {}'.format(value, i)})
+    for i in range(getValue_start(value), getValue(value)+1, 1):
+        if(i is getValue_start(value) or i is getValue(value)):
+            marks.update({i-getValue_start(value)+1: '{} {}'.format(value, i)})
         else:
-            marks.update({i: '{}'.format(i)})
+            marks.update({i-getValue_start(value)+1: '{}'.format(i)})
     return marks
 
 
 @app.callback(Output("my-slider", "max"),
               [Input("my-dropdown", "value")])
 def update_slider_max(value):
-    return getValue(value)
+    return getValue(value) - getValue_start(value) + 1
 
 
 @app.callback(Output("bar-selector", "value"),
@@ -361,7 +366,7 @@ def update_histogram(value, slider_value, selection):
             ]), layout=layout)
 
 
-def get_lat_lon_color(selectedData, value, slider_value):
+def get_lat_lon_color(selectedData, value, slider_value, searchBarInput):
     listStr = "totalList[getIndex(value)][slider_value-1]"
     if(selectedData is None or len(selectedData) is 0):
         return listStr
@@ -381,19 +386,54 @@ def get_lat_lon_color(selectedData, value, slider_value):
 
 @app.callback(Output("map-graph", "figure"),
               [Input("my-dropdown", "value"), Input('my-slider', 'value'),
-              Input("bar-selector", "value")],
+              Input("bar-selector", "value"), Input("search-bar", "value")],
               [State('map-graph', 'relayoutData')])
-              # ,
-              #  State('mapControls', 'values')])
-def update_graph(value, slider_value, selectedData, prevLayout):
+def update_graph(value, slider_value, selectedData, searchBarInput, prevLayout):
     mapControls = None
     zoom = 4.0
     latInitial = 21.146633
     lonInitial = 79.088860
     bearing = 0
+    listStr = get_lat_lon_color(selectedData, value, slider_value, searchBarInput)
 
-    listStr = get_lat_lon_color(selectedData, value, slider_value)
-
+    listsOfStr = eval(listStr)['t'].tolist()
+    new_list = []
+    listStr_lat = eval(listStr)['Lat'].tolist()
+    new_lat = []
+    listStr_lon = eval(listStr)['Lon'].tolist()
+    new_lon = []
+    listStr_index = eval(listStr).index.hour
+    to_del = []
+    if (not searchBarInput):
+        new_list = listsOfStr
+        new_lon = listStr_lon
+        new_lat = listStr_lat
+    elif (len(searchBarInput) == 2):
+        new_list = listsOfStr
+        new_lon = listStr_lon
+        new_lat = listStr_lat
+    elif (searchBarInput[0] == '0'):
+        for i in range(len(listsOfStr)):
+            a = listsOfStr[i]
+            if "flood" in a.lower():
+                new_list.append(a)
+                new_lat.append(listStr_lat[i])
+                new_lon.append(listStr_lon[i])
+            else:
+                to_del.append(i)
+        # toSearch = "flood"
+    elif (searchBarInput[0] == '1'):
+        for i in range(len(listsOfStr)):
+            a = listsOfStr[i]
+            if "dengue" in a.lower():
+                new_list.append(a)
+                new_lat.append(listStr_lat[i])
+                new_lon.append(listStr_lon[i])
+            else:
+                to_del.append(i)
+        # toSearch = "dengue"
+    if(len(to_del) > 0):
+        np.delete(listStr_index, to_del, axis=0)
     if(prevLayout is not None and mapControls is not None and
        'lock' in mapControls):
         zoom = float(prevLayout['mapbox']['zoom'])
@@ -403,13 +443,13 @@ def update_graph(value, slider_value, selectedData, prevLayout):
     return go.Figure(
         data=Data([
             Scattermapbox(
-                lat=eval(listStr)['Lat'],
-                lon=eval(listStr)['Lon'],
+                lat=new_lat,
+                lon=new_lon,
                 mode='markers',
                 hoverinfo="text",
-                text=eval(listStr)['t'],
+                text=new_list,
                 marker=Marker(
-                    color=np.append(np.insert(eval(listStr).index.hour, 0, 0), 23),
+                    color=np.append(np.insert(listStr_index, 0, 0), 23),
                     colorscale=[[0, "#F4EC15"], [0.04167, "#DAF017"],
                                 [0.0833, "#BBEC19"], [0.125, "9DE81B"],
                                 [0.1667, "#80E41D"], [0.2083, "#66E01F"],
@@ -437,25 +477,6 @@ def update_graph(value, slider_value, selectedData, prevLayout):
                         )
                 ),
             ),
-            # Scattermapbox(
-            #     lat=["40.7505", "40.8296", "40.7484", "40.7069", "40.7527",
-            #          "40.7127", "40.7589", "40.8075", "40.7489"],
-            #     lon=["-73.9934", "-73.9262", "-73.9857", "-74.0113",
-            #          "-73.9772", "-74.0134", "-73.9851", "-73.9626",
-            #          "-73.9680"],
-            #     mode='markers',
-            #     hoverinfo="text",
-            #     text=["Madison Square Garden", "Yankee Stadium",
-            #           "Empire State Building", "New York Stock Exchange",
-            #           "Grand Central Station", "One World Trade Center",
-            #           "Times Square", "Columbia University",
-            #           "United Nations HQ"],
-            #     # opacity=0.5,
-            #     marker=Marker(
-            #         size=6,
-            #         color="#ffa0a0"
-            #     ),
-            # ),
         ]),
         layout=Layout(
             autosize=True,
