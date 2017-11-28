@@ -2,6 +2,7 @@ import dash
 from dash.dependencies import Input, Output, State, Event
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table_experiments as dt
 import plotly.plotly as py
 from plotly import graph_objs as go
 from plotly.graph_objs import *
@@ -24,27 +25,45 @@ if 'DYNO' in os.environ:
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
 
-def initialize():
-    ##df = pd.read_csv('https://www.dropbox.com/s/vxe7623o7eqbe6n/output.csv?dl=1')
-    # df = pd.read_csv('data/output.csv')
-    # df.drop("Unnamed: 0", 1, inplace=True)
-    # df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
-    # df.index = df["Date/Time"]
-    # df.drop("Date/Time", 1, inplace=True)
-    # df.drop("Base", 1, inplace=True)
-    df = pd.read_csv('data/tweets.csv')
-    df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
-    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
-    df.index = df["date"]
-    df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
-    totalList = []
-    for month in df.groupby(df.index.month):
-        dailyList = []
-        for day in month[1].groupby(month[1].index.day):
-            dailyList.append(day[1])
-        totalList.append(dailyList)
-    return totalList
+# def initialize():
+#     df = pd.read_csv('data/data.csv')
+#     nan = np.nan
 
+#     untaggedTweets = df.query("plt != plt").copy() # get NaN tweets
+#     df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
+#     df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
+#     df.index = df["date"]
+#     print untaggedTweets
+#     df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
+#     totalList = []
+#     #untaggedTweets = []
+#     for month in df.groupby(df.index.month):
+#         dailyList = []
+#         for day in month[1].groupby(month[1].index.day):
+#             dailyList.append(day[1])
+#         totalList.append(dailyList)
+#     return untaggedTweets, totalList
+
+df = pd.read_csv('data/data.csv')
+nan = np.nan
+
+df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
+df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
+df.index = df["date"]
+untaggedTweets = df.query("plt != plt").copy() # get NaN tweets
+untaggedTweets.drop([ 'plt', 'pln', 'acr/$date', 'uid', 'p', 'f', 'lang', 'flrs', 'cc', 'loc','Lat', 'Lon'], axis=1, inplace=True)
+untaggedTweets.rename(columns={'_id':'ID', 'date':'Date','t':'Tweet Text'}, inplace=True)
+#pd.groupby(untaggedTweets, by=[untaggedTweets.index.date, untaggedTweets.index.month])
+
+print untaggedTweets.index.date
+
+df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
+totalList = []
+for month in df.groupby(df.index.month):
+    dailyList = []
+    for day in month[1].groupby(month[1].index.day):
+        dailyList.append(day[1])
+    totalList.append(dailyList)
 
 app.layout = html.Div([
     html.Div([
@@ -117,6 +136,18 @@ app.layout = html.Div([
                                  using the dropdown menu",
                     className="bars"
                 ),
+                dt.DataTable(
+                    rows=untaggedTweets.to_dict('records'),
+
+                    # optional - sets the order of columns
+                    columns=sorted(untaggedTweets.columns),
+
+                    row_selectable=True,
+                    filterable=True,
+                    sortable=True,
+                    selected_row_indices=[],
+                    id='datatable'
+                ),
                 dcc.Graph(id="histogram"),
                 html.P("", id="popupAnnotation", className="popupAnnotation"),
             ], className="graph twelve coluns"),
@@ -170,6 +201,12 @@ def getClickIndex(value):
     if(value==None):
         return 0
     return value['points'][0]['x']
+
+
+# @app.callback(Output("datatable", "rows"),
+#               [Input("my-dropdown", "value"), Input('my-slider', 'value')])
+# def update_datatable(value, slider_value):
+#     return untaggedTweets[untaggedTweets['date']]
 
 
 @app.callback(Output("my-slider", "marks"),
@@ -611,10 +648,11 @@ for css in external_css:
     app.css.append_css({"external_url": css})
 
 
-@app.server.before_first_request
-def defineTotalList():
-    global totalList
-    totalList = initialize()
+# @app.server.before_first_request
+# def defineTotalList():
+#     global totalList
+#     untaggedTweets, totalList = initialize()
+
 
 
 if __name__ == '__main__':
