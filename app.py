@@ -2,6 +2,7 @@ import dash
 from dash.dependencies import Input, Output, State, Event
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table_experiments as dt
 import plotly.plotly as py
 from plotly import graph_objs as go
 from plotly.graph_objs import *
@@ -9,6 +10,7 @@ from flask import Flask
 import pandas as pd
 import numpy as np
 import os
+import datetime 
 
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
@@ -23,28 +25,23 @@ if 'DYNO' in os.environ:
 
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
+df = pd.read_csv('data/tweets.csv')
+nan = np.nan
 
-def initialize():
-    ##df = pd.read_csv('https://www.dropbox.com/s/vxe7623o7eqbe6n/output.csv?dl=1')
-    # df = pd.read_csv('data/output.csv')
-    # df.drop("Unnamed: 0", 1, inplace=True)
-    # df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y-%m-%d %H:%M:%S")
-    # df.index = df["Date/Time"]
-    # df.drop("Date/Time", 1, inplace=True)
-    # df.drop("Base", 1, inplace=True)
-    df = pd.read_csv('data/tweets.csv')
-    df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
-    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
-    df.index = df["date"]
-    df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
-    totalList = []
-    for month in df.groupby(df.index.month):
-        dailyList = []
-        for day in month[1].groupby(month[1].index.day):
-            dailyList.append(day[1])
-        totalList.append(dailyList)
-    return totalList
+df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
+df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
+df.index = df["date"]
+untaggedTweets = df.query("plt != plt").query("date == date").copy() # get NaN tweets
+untaggedTweets.drop([ '_id', 'plt', 'pln', 'acr/$date', 'uid', 'p', 'f', 'lang', 'flrs', 'cc', 'loc','Lat', 'Lon'], axis=1, inplace=True)
+untaggedTweets.rename(columns={ 'date':'Date','t':'Tweet Text'}, inplace=True)
 
+df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
+totalList = []
+for month in df.groupby(df.index.month):
+    dailyList = []
+    for day in month[1].groupby(month[1].index.day):
+        dailyList.append(day[1])
+    totalList.append(dailyList)
 
 app.layout = html.Div([
     html.Div([
@@ -65,15 +62,6 @@ app.layout = html.Div([
             html.Div([
                 html.Div([
                     html.H2("Savitr", style={'font-family': 'Dosis'}),
-                    # html.Img(src="https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png",
-                    #         style={
-                    #             'height': '100px',
-                    #             'float': 'right',
-                    #             'position': 'relative',
-                    #             'bottom': '145px',
-                    #             'left': '5px'
-                    #         },
-                    # ),
                 ]),
                 html.P("Disaster mapping using Twitter", className="explanationParagraph twelve columns"),
                 dcc.Graph(id='map-graph'),
@@ -124,6 +112,15 @@ app.layout = html.Div([
                 ),
                 dcc.Graph(id="histogram"),
                 html.P("", id="popupAnnotation", className="popupAnnotation"),
+                html.H4('Untagged tweets'),
+                dt.DataTable(
+                    rows=untaggedTweets.to_dict('records'),
+                    # optional - sets the order of columns
+                    columns=sorted(untaggedTweets.columns),
+                    filterable=True,
+                    sortable=True,
+                    id='datatable'
+                ),
             ], className="graph twelve coluns"),
         ], style={'margin': 'auto auto'}),
         dcc.Slider(
@@ -132,17 +129,6 @@ app.layout = html.Div([
             step=1,
             value=1
         ),
-        # dcc.Markdown("Source: [FiveThirtyEight](https://github.com/fivethirtyeight/uber-tlc-foil-response/tree/master/uber-trip-data)",
-        #              className="source"),
-        # dcc.Checklist(
-        #     id="mapControls",
-        #     options=[
-        #         {'label': 'Lock Camera', 'value': 'lock'}
-        #     ],
-        #     values=[''],
-        #     labelClassName="mapControls",
-        #     inputStyle={"z-index": "3"}
-        # ),
     ], className="graphSlider ten columns offset-by-one"),
 ], style={"padding-top": "20px"})
 
@@ -176,6 +162,16 @@ def getClickIndex(value):
         return 0
     return value['points'][0]['x']
 
+
+@app.callback(Output("datatable", "rows"),
+              [Input("my-dropdown", "value"), Input('my-slider', 'value')])
+def update_datatable(value, slider_value):
+    if value == 'Sept':
+        month = 9
+    else:
+        month = 10
+    slider_value = slider_value+getValue_start(value)-1
+    return untaggedTweets[(untaggedTweets['Date'].dt.day == slider_value) & (untaggedTweets['Date'].dt.month == month)].to_dict('records')
 
 @app.callback(Output("my-slider", "marks"),
               [Input("my-dropdown", "value")])
@@ -522,100 +518,7 @@ def update_graph(value, slider_value, selectedData, searchBarInput, prevLayout):
                         color="black"
                     ),
                     y=0.02
-                ),
-                #dict(
-                    # buttons=([
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-73.9934',
-                    #                 'mapbox.center.lat': '40.7505',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='Madison Square Garden',
-                    #         method='relayout'
-                    #     ),
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-73.9262',
-                    #                 'mapbox.center.lat': '40.8296',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='Yankee Stadium',
-                    #         method='relayout'
-                    #     ),
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-73.9857',
-                    #                 'mapbox.center.lat': '40.7484',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='Empire State Building',
-                    #         method='relayout'
-                    #     ),
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-74.0113',
-                    #                 'mapbox.center.lat': '40.7069',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='New York Stock Exchange',
-                    #         method='relayout'
-                    #     ),
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-73.785607',
-                    #                 'mapbox.center.lat': '40.644987',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='JFK Airport',
-                    #         method='relayout'
-                    #     ),
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-73.9772',
-                    #                 'mapbox.center.lat': '40.7527',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='Grand Central Station',
-                    #         method='relayout'
-                    #     ),
-                    #     dict(
-                    #         args=[{
-                    #                 'mapbox.zoom': 15,
-                    #                 'mapbox.center.lon': '-73.9851',
-                    #                 'mapbox.center.lat': '40.7589',
-                    #                 'mapbox.bearing': 0,
-                    #                 'mapbox.style': 'dark'
-                    #             }],
-                    #         label='Times Square',
-                    #         method='relayout'
-                    #     )
-                    # ]),
-                #     direction="down",
-                #     pad={'r': 0, 't': 0, 'b': 0, 'l': 0},
-                #     showactive=False,
-                #     bgcolor="rgb(50, 49, 48, 0)",
-                #     type='buttons',
-                #     yanchor='bottom',
-                #     xanchor='left',
-                #     font=dict(
-                #         color="#FFFFFF"
-                #     ),
-                #     x=0,
-                #     y=0.05
-                # )
+                )
             ]
         )
     )
@@ -632,10 +535,6 @@ for css in external_css:
     app.css.append_css({"external_url": css})
 
 
-@app.server.before_first_request
-def defineTotalList():
-    global totalList
-    totalList = initialize()
 
 
 if __name__ == '__main__':
