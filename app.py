@@ -44,12 +44,23 @@ for month in df.groupby(df.index.month):
     totalList.append(dailyList)
 
 app.layout = html.Div([
+	html.Link(
+        rel='stylesheet',
+        href='/styles.css'
+    ),
     html.Div([
         html.Div([
-            html.P(id='total-rides', className="totalRides"),
-            html.P(id='total-rides-selection', className="totalRideSelection"),
-            html.P(id='date-value', className="dateValue"),
-            dcc.Dropdown(
+            html.P(id='total-rides', className="totalRides",style={"color": "black", "top":"140px"}),
+            html.Div([html.P(id='total-rides-selection', className="totalRideSelection"),
+            html.P(id='date-value', className="dateValue",style={"color": "black"})],style={"display": "hidden"}),
+            html.Div([
+                html.Div([
+                    html.H2("Savitr", style={'font-family': 'Dosis'}),
+                	html.P("Disaster mapping using Twitter", className="explanationParagraph twelve columns"),
+                ],style={"margin-bottom": "10px"}),
+
+            html.Div([
+            	dcc.Dropdown(
                     id='search-bar',
                     options=[
                         {'label': 'Flood', 'value': '0'},
@@ -58,14 +69,18 @@ app.layout = html.Div([
                     multi=True,
                     placeholder="Choose Situation",
                     className="bars"
-                ),
+            )],style={"margin-top": "10px","margin-bottom": "5px"}),
+
+                
+            dcc.Graph(id='map-graph'),
+
+
+            html.H5('Select Date',style={"margin-top":"20px"}),
+
+            
             html.Div([
-                html.Div([
-                    html.H2("Savitr", style={'font-family': 'Dosis'}),
-                ]),
-                html.P("Disaster mapping using Twitter", className="explanationParagraph twelve columns"),
-                dcc.Graph(id='map-graph'),
-            dcc.Dropdown(
+
+            	dcc.Dropdown(
                 id='my-dropdown',
                 options=[
                     {'label': 'Sept 2017', 'value': 'Sept'},
@@ -74,8 +89,10 @@ app.layout = html.Div([
                 value="Sept",
                 placeholder="Please choose a month",
                 className="month-picker"
-            ),
+
+            )],style={"margin-top": "10px","margin-bottom": "10px"}),
             
+            html.Div([
                 dcc.Dropdown(
                     id='bar-selector',
                     options=[
@@ -109,10 +126,24 @@ app.layout = html.Div([
                                  the box-select/lasso tool or \
                                  using the dropdown menu",
                     className="bars"
-                ),
-                dcc.Graph(id="histogram"),
+                )],style={"display": "none"}),
+
+               dcc.Graph(id="histogram"),
+
+               html.Div([
+                dcc.Slider(
+		            id="my-slider",
+		            min=1,
+		            step=1,
+		            value=1
+		            
+		        )],style={"padding": "20px"}),
+
+
                 html.P("", id="popupAnnotation", className="popupAnnotation"),
                 html.H4('Untagged tweets'),
+
+                html.Div([
                 dt.DataTable(
                     rows=untaggedTweets.to_dict('records'),
                     # optional - sets the order of columns
@@ -120,15 +151,10 @@ app.layout = html.Div([
                     filterable=True,
                     sortable=True,
                     id='datatable'
-                ),
+               )],style={"margin-top": "10px","margin-bottom": "10px"}),
+
             ], className="graph twelve coluns"),
         ], style={'margin': 'auto auto'}),
-        dcc.Slider(
-            id="my-slider",
-            min=1,
-            step=1,
-            value=1
-        ),
     ], className="graphSlider ten columns offset-by-one"),
 ], style={"padding-top": "20px"})
 
@@ -232,7 +258,8 @@ def update_date(value, slider_value, selection):
     holder = []
     if(value is None or selection is None or len(selection) is 24
        or len(selection) is 0):
-        return (value, " ", slider_value, " - showing: All")
+    	slider_value = slider_value+getValue_start(value)-1
+        return (value, " ", slider_value, "")
 
     for x in selection:
         holder.append(int(x))
@@ -261,7 +288,8 @@ def clear_selection(value):
               [Input("bar-selector", "value")])
 def clear_selection(value):
     if(value is None or len(value) is 0):
-        return "Select any of the bars to section data by time"
+        # return "Select any of the bars to section data by time"
+        return ""
     else:
         return ""
 
