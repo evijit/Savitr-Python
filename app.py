@@ -10,7 +10,8 @@ from flask import Flask
 import pandas as pd
 import numpy as np
 import os
-import datetime 
+import datetime
+from pymongo import MongoClient
 
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
@@ -25,17 +26,23 @@ if 'DYNO' in os.environ:
 
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
-df = pd.read_csv('data/tweets.csv')
+# get tweets from mongo
+client = MongoClient('localhost:27017')
+db = client.test
+cursor = db.all_tweets.find({})
+
+df = pd.DataFrame(list(cursor))
 nan = np.nan
 
-df.rename(columns={'cr/$date':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
+df.rename(columns={'cr':'date', 'tlt':'Lat', 'tln':'Lon'}, inplace = True)
 df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
 df.index = df["date"]
-untaggedTweets = df.query("plt != plt").query("date == date").copy() # get NaN tweets
-untaggedTweets.drop([ '_id', 'plt', 'pln', 'acr/$date', 'uid', 'p', 'f', 'lang', 'flrs', 'cc', 'loc','Lat', 'Lon'], axis=1, inplace=True)
+untaggedTweets = df.query("plt == ''").copy() # get NaN tweets
+untaggedTweets.drop([ '_id', 'plt', 'pln', 'acr', 'uid', 'p', 'f', 'lang', 'flrs', 'cc', 'loc','Lat', 'Lon'], axis=1, inplace=True)
 untaggedTweets.rename(columns={ 'date':'Date','t':'Tweet Text'}, inplace=True)
+untaggedTweets['Tweet Time'] = untaggedTweets['Date'].dt.strftime("%d %B %l:%M %p")
 
-df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
+df.drop(['_id', 'plt','date', 'pln', 'acr', 'uid', 'p', 'f'], axis=1, inplace=True)
 totalList = []
 for month in df.groupby(df.index.month):
     dailyList = []
@@ -50,7 +57,7 @@ app.layout = html.Div([
     ),
     html.Div([
         html.Div([
-            html.P(id='total-rides', className="totalRides",style={"color": "black", "top":"140px"}),
+            html.P(id='total-rides', className="totalRides",style={"color": "black", "top":"150px"}),
             html.Div([html.P(id='total-rides-selection', className="totalRideSelection"),
             html.P(id='date-value', className="dateValue",style={"color": "black"})],style={"display": "hidden"}),
             html.Div([
@@ -147,7 +154,8 @@ app.layout = html.Div([
                 dt.DataTable(
                     rows=untaggedTweets.to_dict('records'),
                     # optional - sets the order of columns
-                    columns=sorted(untaggedTweets.columns),
+                    # columns=sorted(untaggedTweets.columns),
+                    columns = ['Tweet Time','Tweet Text'],
                     filterable=True,
                     sortable=True,
                     id='datatable'
