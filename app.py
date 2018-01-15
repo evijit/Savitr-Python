@@ -6,11 +6,17 @@ import dash_table_experiments as dt
 import plotly.plotly as py
 from plotly import graph_objs as go
 from plotly.graph_objs import *
-from flask import Flask
+from flask import Flask, send_from_directory
 import pandas as pd
 import numpy as np
 import os
 import datetime 
+import sys
+import preprocessor
+
+preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.RESERVED)
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 server = Flask('my app')
 server.secret_key = os.environ.get('secret_key', 'secret')
@@ -33,7 +39,10 @@ df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d %H:%M:%S")
 df.index = df["date"]
 untaggedTweets = df.query("plt != plt").query("date == date").copy() # get NaN tweets
 untaggedTweets.drop([ '_id', 'plt', 'pln', 'acr/$date', 'uid', 'p', 'f', 'lang', 'flrs', 'cc', 'loc','Lat', 'Lon'], axis=1, inplace=True)
-untaggedTweets.rename(columns={ 'date':'Date','t':'Tweet Text'}, inplace=True)
+untaggedTweets = untaggedTweets[['t','date']]
+# untaggedTweets["date"] = untaggedTweets["date"].apply(lambda x: x.strftime('%I:%M:%S %p'))
+untaggedTweets['t'] = untaggedTweets['t'].apply(preprocessor.clean)
+untaggedTweets.rename(columns={'t':'Tweet Text', 'date':'Date'}, inplace=True)
 
 df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
 totalList = []
@@ -42,6 +51,8 @@ for month in df.groupby(df.index.month):
     for day in month[1].groupby(month[1].index.day):
         dailyList.append(day[1])
     totalList.append(dailyList)
+
+app.title = 'Savitr - Disaster Mapping using Twitter'
 
 app.layout = html.Div([
 	html.Link(
@@ -60,17 +71,14 @@ app.layout = html.Div([
                 ],style={"margin-bottom": "10px"}),
 
             html.Div([
-            	dcc.Dropdown(
+                dcc.Input(
                     id='search-bar',
-                    options=[
-                        {'label': 'Flood', 'value': '0'},
-                        {'label': 'Dengue', 'value': '1'}
-                    ],
-                    multi=True,
-                    placeholder="Choose Situation",
-                    className="bars"
-            )],style={"margin-top": "10px","margin-bottom": "5px"}),
-
+                    type='text',
+                    placeholder="Choose Situation(s), comma separated",
+                    className="bars",
+                    style={'width': '100%'}
+                ),
+                ],style={"margin-top": "10px","margin-bottom": "5px"}),
                 
             dcc.Graph(id='map-graph'),
 
@@ -147,7 +155,7 @@ app.layout = html.Div([
                 dt.DataTable(
                     rows=untaggedTweets.to_dict('records'),
                     # optional - sets the order of columns
-                    columns=sorted(untaggedTweets.columns),
+                    columns=untaggedTweets.columns,
                     filterable=True,
                     sortable=True,
                     id='datatable'
@@ -390,7 +398,7 @@ def update_histogram(value, slider_value, selection):
             ]), layout=layout)
 
 
-def get_lat_lon_color(selectedData, value, slider_value, searchBarInput):
+def get_lat_lon_color(selectedData, value, slider_value):
     listStr = "totalList[getIndex(value)][slider_value-1]"
     if(selectedData is None or len(selectedData) is 0):
         return listStr
@@ -418,8 +426,7 @@ def update_graph(value, slider_value, selectedData, searchBarInput, prevLayout):
     latInitial = 21.146633
     lonInitial = 79.088860
     bearing = 0
-    listStr = get_lat_lon_color(selectedData, value, slider_value, searchBarInput)
-
+    listStr = get_lat_lon_color(selectedData, value, slider_value)
     listsOfStr = eval(listStr)['t'].tolist()
     new_list = []
     listStr_lat = eval(listStr)['Lat'].tolist()
@@ -432,30 +439,21 @@ def update_graph(value, slider_value, selectedData, searchBarInput, prevLayout):
         new_list = listsOfStr
         new_lon = listStr_lon
         new_lat = listStr_lat
-    elif (len(searchBarInput) == 2):
-        new_list = listsOfStr
-        new_lon = listStr_lon
-        new_lat = listStr_lat
-    elif (searchBarInput[0] == '0'):
+    else:
+        searchBarInput = searchBarInput.decode('utf-8')
+        searchBarInput = searchBarInput.lower()
+        inputs = searchBarInput.split(',')
         for i in range(len(listsOfStr)):
             a = listsOfStr[i]
-            if "flood" in a.lower():
+            if any(situation in a.lower() for situation in inputs):
+                # clean out tweets: remove urls, reserved words
+                a = preprocessor.clean(a)
                 new_list.append(a)
                 new_lat.append(listStr_lat[i])
                 new_lon.append(listStr_lon[i])
             else:
                 to_del.append(i)
-        # toSearch = "flood"
-    elif (searchBarInput[0] == '1'):
-        for i in range(len(listsOfStr)):
-            a = listsOfStr[i]
-            if "dengue" in a.lower():
-                new_list.append(a)
-                new_lat.append(listStr_lat[i])
-                new_lon.append(listStr_lon[i])
-            else:
-                to_del.append(i)
-        # toSearch = "dengue"
+    print len(new_list), 'tweets found! for', searchBarInput
     if(len(to_del) > 0):
         np.delete(listStr_index, to_del, axis=0)
     if(prevLayout is not None and mapControls is not None and
@@ -562,8 +560,10 @@ external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.
 for css in external_css:
     app.css.append_css({"external_url": css})
 
-
-
+@server.route('/favicon.ico')
+def favicon():
+    return flask.send_from_directory(os.path.join(server.root_path, 'static'),
+                                     'favicon.ico')
 
 if __name__ == '__main__':
     app.run_server(debug=True)
