@@ -454,6 +454,9 @@ def update_graph(value, slider_value, selectedData, searchBarInput, prevLayout):
             else:
                 to_del.append(i)
     print len(new_list), 'tweets found! for', searchBarInput
+    # print discarded tweets per character of search
+    for i in to_del:
+        print listsOfStr[i] 
     if(len(to_del) > 0):
         np.delete(listStr_index, to_del, axis=0)
     if(prevLayout is not None and mapControls is not None and
@@ -562,7 +565,7 @@ for css in external_css:
 
 @server.route('/favicon.ico')
 def favicon():
-    return flask.send_from_directory(os.path.join(server.root_path, 'static'),
+    return send_from_directory(os.path.join(server.root_path, '/'),
                                      'favicon.ico')
 
 if __name__ == '__main__':
