@@ -24,10 +24,11 @@ server.secret_key = os.environ.get('secret_key', 'secret')
 app = dash.Dash('SavitrApp', server=server, url_base_pathname='/', csrf_protect=False)
 
 if 'DYNO' in os.environ:
-    app.scripts.append_script({
-        'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
-    })
+	app.scripts.append_script({
+		'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
+	})
 
+curate = ['harvey', 'irma', 'sudan', 'nigeria', 'uganda', 'kampala', 'croatia', 'niger', 'manila']
 
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
@@ -47,526 +48,544 @@ untaggedTweets.rename(columns={'t':'Tweet Text', 'date':'Date'}, inplace=True)
 df.drop(['_id', 'plt','date', 'pln', 'acr/$date', 'uid', 'p', 'f'], axis=1, inplace=True)
 totalList = []
 for month in df.groupby(df.index.month):
-    dailyList = []
-    for day in month[1].groupby(month[1].index.day):
-        dailyList.append(day[1])
-    totalList.append(dailyList)
+	dailyList = []
+	for day in month[1].groupby(month[1].index.day):
+		dailyList.append(day[1])
+	totalList.append(dailyList)
 
 app.title = 'Savitr - Disaster Mapping using Twitter'
 
 app.layout = html.Div([
 	html.Link(
-        rel='stylesheet',
-        href='/styles.css'
-    ),
-    html.Div([
-        html.Div([
-            html.P(id='total-rides', className="totalRides",style={"color": "black", "top":"140px"}),
-            html.Div([html.P(id='total-rides-selection', className="totalRideSelection"),
-            html.P(id='date-value', className="dateValue",style={"color": "black"})],style={"display": "hidden"}),
-            html.Div([
-                html.Div([
-                    html.H2("Savitr", style={'font-family': 'Dosis'}),
-                	html.P("Disaster mapping using Twitter", className="explanationParagraph twelve columns"),
-                ],style={"margin-bottom": "10px"}),
+		rel='stylesheet',
+		href='/styles.css'
+	),
+	html.Div([
+		html.Div([
+			html.P(id='total-rides', className="totalRides",style={"color": "black", "top":"140px"}),
+			html.Div([html.P(id='total-rides-selection', className="totalRideSelection"),
+			html.P(id='date-value', className="dateValue",style={"color": "black"})],style={"display": "hidden"}),
+			html.Div([
+				html.Div([
+					html.H2("Savitr", style={'font-family': 'Dosis'}),
+					html.P("Disaster mapping using Twitter", className="explanationParagraph twelve columns"),
+				],style={"margin-bottom": "10px"}),
 
-            html.Div([
-                dcc.Input(
-                    id='search-bar',
-                    type='text',
-                    placeholder="Choose Situation(s), comma separated",
-                    className="bars",
-                    style={'width': '100%'}
-                ),
-                ],style={"margin-top": "10px","margin-bottom": "5px"}),
-                
-            dcc.Graph(id='map-graph'),
-
-
-            html.H5('Select Date',style={"margin-top":"20px"}),
-
-            
-            html.Div([
-
-            	dcc.Dropdown(
-                id='my-dropdown',
-                options=[
-                    {'label': 'Sept 2017', 'value': 'Sept'},
-                    {'label': 'Oct 2017', 'value': 'Oct'}
-                ],
-                value="Sept",
-                placeholder="Please choose a month",
-                className="month-picker"
-
-            )],style={"margin-top": "10px","margin-bottom": "10px"}),
-            
-            html.Div([
-                dcc.Dropdown(
-                    id='bar-selector',
-                    options=[
-                        {'label': '0:00', 'value': '0'},
-                        {'label': '1:00', 'value': '1'},
-                        {'label': '2:00', 'value': '2'},
-                        {'label': '3:00', 'value': '3'},
-                        {'label': '4:00', 'value': '4'},
-                        {'label': '5:00', 'value': '5'},
-                        {'label': '6:00', 'value': '6'},
-                        {'label': '7:00', 'value': '7'},
-                        {'label': '8:00', 'value': '8'},
-                        {'label': '9:00', 'value': '9'},
-                        {'label': '10:00', 'value': '10'},
-                        {'label': '11:00', 'value': '11'},
-                        {'label': '12:00', 'value': '12'},
-                        {'label': '13:00', 'value': '13'},
-                        {'label': '14:00', 'value': '14'},
-                        {'label': '15:00', 'value': '15'},
-                        {'label': '16:00', 'value': '16'},
-                        {'label': '17:00', 'value': '17'},
-                        {'label': '18:00', 'value': '18'},
-                        {'label': '19:00', 'value': '19'},
-                        {'label': '20:00', 'value': '20'},
-                        {'label': '21:00', 'value': '21'},
-                        {'label': '22:00', 'value': '22'},
-                        {'label': '23:00', 'value': '23'}
-                    ],
-                    multi=True,
-                    placeholder="Select certain hours using \
-                                 the box-select/lasso tool or \
-                                 using the dropdown menu",
-                    className="bars"
-                )],style={"display": "none"}),
-
-               dcc.Graph(id="histogram"),
-
-               html.Div([
-                dcc.Slider(
-		            id="my-slider",
-		            min=1,
-		            step=1,
-		            value=1
-		            
-		        )],style={"padding": "20px"}),
+			html.Div([
+				dcc.Input(
+					id='search-bar',
+					type='text',
+					placeholder="Choose Situation(s), comma separated",
+					className="bars",
+					style={'width': '100%'}
+				),
+				],style={"margin-top": "10px","margin-bottom": "5px"}),
+				
+			dcc.Graph(id='map-graph'),
 
 
-                html.P("", id="popupAnnotation", className="popupAnnotation"),
-                html.H4('Untagged tweets'),
+			html.H5('Select Date',style={"margin-top":"20px"}),
 
-                html.Div([
-                dt.DataTable(
-                    rows=untaggedTweets.to_dict('records'),
-                    # optional - sets the order of columns
-                    columns=untaggedTweets.columns,
-                    filterable=True,
-                    sortable=True,
-                    id='datatable'
-               )],style={"margin-top": "10px","margin-bottom": "10px"}),
+			
+			html.Div([
 
-            ], className="graph twelve coluns"),
-        ], style={'margin': 'auto auto'}),
-    ], className="graphSlider ten columns offset-by-one"),
+				dcc.Dropdown(
+				id='my-dropdown',
+				options=[
+					{'label': 'Sept 2017', 'value': 'Sept'},
+					{'label': 'Oct 2017', 'value': 'Oct'}
+				],
+				value="Sept",
+				placeholder="Please choose a month",
+				className="month-picker"
+
+			)],style={"margin-top": "10px","margin-bottom": "10px"}),
+			
+			html.Div([
+				dcc.Dropdown(
+					id='bar-selector',
+					options=[
+						{'label': '0:00', 'value': '0'},
+						{'label': '1:00', 'value': '1'},
+						{'label': '2:00', 'value': '2'},
+						{'label': '3:00', 'value': '3'},
+						{'label': '4:00', 'value': '4'},
+						{'label': '5:00', 'value': '5'},
+						{'label': '6:00', 'value': '6'},
+						{'label': '7:00', 'value': '7'},
+						{'label': '8:00', 'value': '8'},
+						{'label': '9:00', 'value': '9'},
+						{'label': '10:00', 'value': '10'},
+						{'label': '11:00', 'value': '11'},
+						{'label': '12:00', 'value': '12'},
+						{'label': '13:00', 'value': '13'},
+						{'label': '14:00', 'value': '14'},
+						{'label': '15:00', 'value': '15'},
+						{'label': '16:00', 'value': '16'},
+						{'label': '17:00', 'value': '17'},
+						{'label': '18:00', 'value': '18'},
+						{'label': '19:00', 'value': '19'},
+						{'label': '20:00', 'value': '20'},
+						{'label': '21:00', 'value': '21'},
+						{'label': '22:00', 'value': '22'},
+						{'label': '23:00', 'value': '23'}
+					],
+					multi=True,
+					placeholder="Select certain hours using \
+								 the box-select/lasso tool or \
+								 using the dropdown menu",
+					className="bars"
+				)],style={"display": "none"}),
+
+			   dcc.Graph(id="histogram"),
+
+			   html.Div([
+				dcc.Slider(
+					id="my-slider",
+					min=1,
+					step=1,
+					value=1
+					
+				)],style={"padding": "20px"}),
+
+
+				html.P("", id="popupAnnotation", className="popupAnnotation"),
+				html.H4('Untagged tweets'),
+
+				html.Div([
+				dt.DataTable(
+					rows=untaggedTweets.to_dict('records'),
+					# optional - sets the order of columns
+					columns=untaggedTweets.columns,
+					filterable=True,
+					sortable=True,
+					id='datatable'
+			   )],style={"margin-top": "10px","margin-bottom": "10px"}),
+
+			], className="graph twelve coluns"),
+		], style={'margin': 'auto auto'}),
+	], className="graphSlider ten columns offset-by-one"),
 ], style={"padding-top": "20px"})
 
 
 def getValue(value):
-    val = {
-        'Sept': 30,
-        'Oct': 13
-    }[value]
-    return val
+	val = {
+		'Sept': 30,
+		'Oct': 13
+	}[value]
+	return val
 
 def getValue_start(value):
-    val = {
-        'Sept': 12,
-        'Oct': 1
-    }[value]
-    return val
+	val = {
+		'Sept': 12,
+		'Oct': 1
+	}[value]
+	return val
 
 
 def getIndex(value):
-    if(value==None):
-        return 0
-    val = {
-        'Sept': 0,
-        'Oct': 1
-    }[value]
-    return val
+	if(value==None):
+		return 0
+	val = {
+		'Sept': 0,
+		'Oct': 1
+	}[value]
+	return val
 
 def getClickIndex(value):
-    if(value==None):
-        return 0
-    return value['points'][0]['x']
+	if(value==None):
+		return 0
+	return value['points'][0]['x']
 
 
 @app.callback(Output("datatable", "rows"),
-              [Input("my-dropdown", "value"), Input('my-slider', 'value')])
+			  [Input("my-dropdown", "value"), Input('my-slider', 'value')])
 def update_datatable(value, slider_value):
-    if value == 'Sept':
-        month = 9
-    else:
-        month = 10
-    slider_value = slider_value+getValue_start(value)-1
-    return untaggedTweets[(untaggedTweets['Date'].dt.day == slider_value) & (untaggedTweets['Date'].dt.month == month)].to_dict('records')
+	if value == 'Sept':
+		month = 9
+	else:
+		month = 10
+	slider_value = slider_value+getValue_start(value)-1
+	return untaggedTweets[(untaggedTweets['Date'].dt.day == slider_value) & (untaggedTweets['Date'].dt.month == month)].to_dict('records')
 
 @app.callback(Output("my-slider", "marks"),
-              [Input("my-dropdown", "value")])
+			  [Input("my-dropdown", "value")])
 def update_slider_ticks(value):
-    marks = {}
-    for i in range(getValue_start(value), getValue(value)+1, 1):
-        if(i is getValue_start(value) or i is getValue(value)):
-            marks.update({i-getValue_start(value)+1: '{} {}'.format(value, i)})
-        else:
-            marks.update({i-getValue_start(value)+1: '{}'.format(i)})
-    return marks
+	marks = {}
+	for i in range(getValue_start(value), getValue(value)+1, 1):
+		if(i is getValue_start(value) or i is getValue(value)):
+			marks.update({i-getValue_start(value)+1: '{} {}'.format(value, i)})
+		else:
+			marks.update({i-getValue_start(value)+1: '{}'.format(i)})
+	return marks
 
 
 @app.callback(Output("my-slider", "max"),
-              [Input("my-dropdown", "value")])
+			  [Input("my-dropdown", "value")])
 def update_slider_max(value):
-    return getValue(value) - getValue_start(value) + 1
+	return getValue(value) - getValue_start(value) + 1
 
 
 @app.callback(Output("bar-selector", "value"),
-              [Input("histogram", "selectedData")])
+			  [Input("histogram", "selectedData")])
 def update_bar_selector(value):
-    holder = []
-    if(value is None or len(value) is 0):
-        return holder
-    for x in value['points']:
-        holder.append(str(int(x['x'])))
-    return holder
+	holder = []
+	if(value is None or len(value) is 0):
+		return holder
+	for x in value['points']:
+		holder.append(str(int(x['x'])))
+	return holder
 
 
 @app.callback(Output("total-rides", "children"),
-              [Input("my-dropdown", "value"), Input('my-slider', 'value')])
+			  [Input("my-dropdown", "value"), Input('my-slider', 'value')])
 def update_total_rides(value, slider_value):
-    return ("Total # of tweets: {:,d}"
-            .format(len(totalList[getIndex(value)][slider_value-1])))
+	return ("Total # of tweets: {:,d}"
+			.format(len(totalList[getIndex(value)][slider_value-1])))
 
 
 @app.callback(Output("total-rides-selection", "children"),
-              [Input("my-dropdown", "value"), Input('my-slider', 'value'),
-               Input('bar-selector', 'value')])
+			  [Input("my-dropdown", "value"), Input('my-slider', 'value'),
+			   Input('bar-selector', 'value')])
 def update_total_rides_selection(value, slider_value, selection):
-    if(selection is None or len(selection) is 0):
-        return ""
-    totalInSelction = 0
-    for x in selection:
-        totalInSelction += len(totalList[getIndex(value)]
-                                        [slider_value-1]
-                                        [totalList[getIndex(value)]
-                                                [slider_value-1].index.hour == int(x)])
-    return ("Total tweets in selection: {:,d}"
-            .format(totalInSelction))
+	if(selection is None or len(selection) is 0):
+		return ""
+	totalInSelction = 0
+	for x in selection:
+		totalInSelction += len(totalList[getIndex(value)]
+										[slider_value-1]
+										[totalList[getIndex(value)]
+												[slider_value-1].index.hour == int(x)])
+	return ("Total tweets in selection: {:,d}"
+			.format(totalInSelction))
 
 
 @app.callback(Output("date-value", "children"),
-              [Input("my-dropdown", "value"), Input('my-slider', 'value'),
-               Input("bar-selector", "value")])
+			  [Input("my-dropdown", "value"), Input('my-slider', 'value'),
+			   Input("bar-selector", "value")])
 def update_date(value, slider_value, selection):
-    holder = []
-    if(value is None or selection is None or len(selection) is 24
-       or len(selection) is 0):
-    	slider_value = slider_value+getValue_start(value)-1
-        return (value, " ", slider_value, "")
+	holder = []
+	if(value is None or selection is None or len(selection) is 24
+	   or len(selection) is 0):
+		slider_value = slider_value+getValue_start(value)-1
+		return (value, " ", slider_value, "")
 
-    for x in selection:
-        holder.append(int(x))
-    holder.sort()
+	for x in selection:
+		holder.append(int(x))
+	holder.sort()
 
-    if(holder[len(holder)-1]-holder[0]+2 == len(holder)+1 and len(holder) > 2):
-        return (value, " ", slider_value, " - showing hour(s): ",
-                holder[0], "-", holder[len(holder)-1])
+	if(holder[len(holder)-1]-holder[0]+2 == len(holder)+1 and len(holder) > 2):
+		return (value, " ", slider_value, " - showing hour(s): ",
+				holder[0], "-", holder[len(holder)-1])
 
-    x = ""
-    for h in holder:
-        if(holder.index(h) == (len(holder)-1)):
-            x += str(h)
-        else:
-            x += str(h) + ", "
-    return (value, " ", slider_value, " - showing hour(s): ", x)
+	x = ""
+	for h in holder:
+		if(holder.index(h) == (len(holder)-1)):
+			x += str(h)
+		else:
+			x += str(h) + ", "
+	return (value, " ", slider_value, " - showing hour(s): ", x)
 
 
 @app.callback(Output("histogram", "selectedData"),
-              [Input("my-dropdown", "value")])
+			  [Input("my-dropdown", "value")])
 def clear_selection(value):
-    if(value is None or len(value) is 0):
-        return None
+	if(value is None or len(value) is 0):
+		return None
 
 @app.callback(Output("popupAnnotation", "children"),
-              [Input("bar-selector", "value")])
+			  [Input("bar-selector", "value")])
 def clear_selection(value):
-    if(value is None or len(value) is 0):
-        # return "Select any of the bars to section data by time"
-        return ""
-    else:
-        return ""
+	if(value is None or len(value) is 0):
+		# return "Select any of the bars to section data by time"
+		return ""
+	else:
+		return ""
 
 
 def get_selection(value, slider_value, selection):
-    xVal = []
-    yVal = []
-    xSelected = []
+	xVal = []
+	yVal = []
+	xSelected = []
 
-    colorVal = ["#F4EC15", "#DAF017", "#BBEC19", "#9DE81B", "#80E41D", "#66E01F",
-                "#4CDC20", "#34D822", "#24D249", "#25D042", "#26CC58", "#28C86D",
-                "#29C481", "#2AC093", "#2BBCA4", "#2BB5B8", "#2C99B4", "#2D7EB0",
-                "#2D65AC", "#2E4EA4", "#2E38A4", "#3B2FA0", "#4E2F9C", "#603099"]
+	colorVal = ["#F4EC15", "#DAF017", "#BBEC19", "#9DE81B", "#80E41D", "#66E01F",
+				"#4CDC20", "#34D822", "#24D249", "#25D042", "#26CC58", "#28C86D",
+				"#29C481", "#2AC093", "#2BBCA4", "#2BB5B8", "#2C99B4", "#2D7EB0",
+				"#2D65AC", "#2E4EA4", "#2E38A4", "#3B2FA0", "#4E2F9C", "#603099"]
 
-    if(selection is not None):
-        for x in selection:
-            xSelected.append(int(x))
-    for i in range(0, 24, 1):
-        if i in xSelected and len(xSelected) < 24:
-            colorVal[i] = ('#FFFFFF')
-        xVal.append(i)
-        yVal.append(len(totalList[getIndex(value)][slider_value-1]
-                    [totalList[getIndex(value)][slider_value-1].index.hour == i]))
+	if(selection is not None):
+		for x in selection:
+			xSelected.append(int(x))
+	for i in range(0, 24, 1):
+		if i in xSelected and len(xSelected) < 24:
+			colorVal[i] = ('#FFFFFF')
+		xVal.append(i)
+		yVal.append(len(totalList[getIndex(value)][slider_value-1]
+					[totalList[getIndex(value)][slider_value-1].index.hour == i]))
 
-    return [np.array(xVal), np.array(yVal), np.array(xSelected),
-            np.array(colorVal)]
+	return [np.array(xVal), np.array(yVal), np.array(xSelected),
+			np.array(colorVal)]
 
 
 
 @app.callback(Output("histogram", "figure"),
-              [Input("my-dropdown", "value"), Input('my-slider', 'value'),
-               Input("bar-selector", "value")])
+			  [Input("my-dropdown", "value"), Input('my-slider', 'value'),
+			   Input("bar-selector", "value")])
 def update_histogram(value, slider_value, selection):
 
-    [xVal, yVal, xSelected, colorVal] = get_selection(value, slider_value,
-                                                      selection)
+	[xVal, yVal, xSelected, colorVal] = get_selection(value, slider_value,
+													  selection)
 
-    layout = go.Layout(
-        bargap=0.01,
-        bargroupgap=0,
-        barmode='group',
-        margin=Margin(l=10, r=0, t=0, b=30),
-        showlegend=False,
-        plot_bgcolor='#ffffff',
-        paper_bgcolor='rgb(66, 134, 244, 0)',
-        height=250,
-        dragmode="select",
-        xaxis=dict(
-            range=[-0.5, 23.5],
-            showgrid=False,
-            nticks=25,
-            fixedrange=True,
-            ticksuffix=":00"
-        ),
-        yaxis=dict(
-            range=[0, max(yVal)+max(yVal)/4],
-            showticklabels=False,
-            showgrid=False,
-            fixedrange=True,
-            rangemode='nonnegative',
-            zeroline='hidden'
-        ),
-        annotations=[
-            dict(x=xi, y=yi,
-                 text=str(yi),
-                 xanchor='center',
-                 yanchor='bottom',
-                 showarrow=False,
-                 font=dict(
-                    color='black'
-                 ),
-                 ) for xi, yi in zip(xVal, yVal)],
-    )
+	layout = go.Layout(
+		bargap=0.01,
+		bargroupgap=0,
+		barmode='group',
+		margin=Margin(l=10, r=0, t=0, b=30),
+		showlegend=False,
+		plot_bgcolor='#ffffff',
+		paper_bgcolor='rgb(66, 134, 244, 0)',
+		height=250,
+		dragmode="select",
+		xaxis=dict(
+			range=[-0.5, 23.5],
+			showgrid=False,
+			nticks=25,
+			fixedrange=True,
+			ticksuffix=":00"
+		),
+		yaxis=dict(
+			range=[0, max(yVal)+max(yVal)/4],
+			showticklabels=False,
+			showgrid=False,
+			fixedrange=True,
+			rangemode='nonnegative',
+			zeroline='hidden'
+		),
+		annotations=[
+			dict(x=xi, y=yi,
+				 text=str(yi),
+				 xanchor='center',
+				 yanchor='bottom',
+				 showarrow=False,
+				 font=dict(
+					color='black'
+				 ),
+				 ) for xi, yi in zip(xVal, yVal)],
+	)
 
-    return go.Figure(
-           data=Data([
-                go.Bar(
-                    x=xVal,
-                    y=yVal,
-                    marker=dict(
-                        color=colorVal
-                    ),
-                    hoverinfo="x"
-                ),
-                go.Scatter(
-                    opacity=0,
-                    x=xVal,
-                    y=yVal/2,
-                    hoverinfo="none",
-                    mode='markers',
-                    marker=Marker(
-                        color='rgb(66, 134, 244, 0)',
-                        symbol="square",
-                        size=40
-                    ),
-                    visible=True
-                )
-            ]), layout=layout)
+	return go.Figure(
+		   data=Data([
+				go.Bar(
+					x=xVal,
+					y=yVal,
+					marker=dict(
+						color=colorVal
+					),
+					hoverinfo="x"
+				),
+				go.Scatter(
+					opacity=0,
+					x=xVal,
+					y=yVal/2,
+					hoverinfo="none",
+					mode='markers',
+					marker=Marker(
+						color='rgb(66, 134, 244, 0)',
+						symbol="square",
+						size=40
+					),
+					visible=True
+				)
+			]), layout=layout)
 
 
 def get_lat_lon_color(selectedData, value, slider_value):
-    listStr = "totalList[getIndex(value)][slider_value-1]"
-    if(selectedData is None or len(selectedData) is 0):
-        return listStr
-    elif(int(selectedData[len(selectedData)-1])-int(selectedData[0])+2 == len(selectedData)+1 and len(selectedData) > 2):
-        listStr += "[(totalList[getIndex(value)][slider_value-1].index.hour>"+str(int(selectedData[0]))+") & \
-                    (totalList[getIndex(value)][slider_value-1].index.hour<" + str(int(selectedData[len(selectedData)-1]))+")]"
-    else:
-        listStr += "["
-        for point in selectedData:
-            if (selectedData.index(point) is not len(selectedData)-1):
-                listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ") | "
-            else:
-                listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ")]"
+	listStr = "totalList[getIndex(value)][slider_value-1]"
+	if(selectedData is None or len(selectedData) is 0):
+		return listStr
+	elif(int(selectedData[len(selectedData)-1])-int(selectedData[0])+2 == len(selectedData)+1 and len(selectedData) > 2):
+		listStr += "[(totalList[getIndex(value)][slider_value-1].index.hour>"+str(int(selectedData[0]))+") & \
+					(totalList[getIndex(value)][slider_value-1].index.hour<" + str(int(selectedData[len(selectedData)-1]))+")]"
+	else:
+		listStr += "["
+		for point in selectedData:
+			if (selectedData.index(point) is not len(selectedData)-1):
+				listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ") | "
+			else:
+				listStr += "(totalList[getIndex(value)][slider_value-1].index.hour==" + str(int(point)) + ")]"
 
-    return listStr
+	return listStr
 
 
 @app.callback(Output("map-graph", "figure"),
-              [Input("my-dropdown", "value"), Input('my-slider', 'value'),
-              Input("bar-selector", "value"), Input("search-bar", "value")],
-              [State('map-graph', 'relayoutData')])
+			  [Input("my-dropdown", "value"), Input('my-slider', 'value'),
+			  Input("bar-selector", "value"), Input("search-bar", "value")],
+			  [State('map-graph', 'relayoutData')])
 def update_graph(value, slider_value, selectedData, searchBarInput, prevLayout):
-    mapControls = None
-    zoom = 4.0
-    latInitial = 21.146633
-    lonInitial = 79.088860
-    bearing = 0
-    listStr = get_lat_lon_color(selectedData, value, slider_value)
-    listsOfStr = eval(listStr)['t'].tolist()
-    new_list = []
-    listStr_lat = eval(listStr)['Lat'].tolist()
-    new_lat = []
-    listStr_lon = eval(listStr)['Lon'].tolist()
-    new_lon = []
-    listStr_index = eval(listStr).index.hour
-    to_del = []
-    if (not searchBarInput):
-        new_list = listsOfStr
-        new_lon = listStr_lon
-        new_lat = listStr_lat
-    else:
-        searchBarInput = searchBarInput.decode('utf-8')
-        searchBarInput = searchBarInput.lower()
-        inputs = searchBarInput.split(',')
-        for i in range(len(listsOfStr)):
-            a = listsOfStr[i]
-            if any(situation in a.lower() for situation in inputs):
-                # clean out tweets: remove urls, reserved words
-                a = preprocessor.clean(a)
-                new_list.append(a)
-                new_lat.append(listStr_lat[i])
-                new_lon.append(listStr_lon[i])
-            else:
-                to_del.append(i)
-    print len(new_list), 'tweets found! for', searchBarInput
-    # print discarded tweets per character of search
-    for i in to_del:
-        print listsOfStr[i] 
-    if(len(to_del) > 0):
-        np.delete(listStr_index, to_del, axis=0)
-    if(prevLayout is not None and mapControls is not None and
-       'lock' in mapControls):
-        zoom = float(prevLayout['mapbox']['zoom'])
-        latInitial = float(prevLayout['mapbox']['center']['lat'])
-        lonInitial = float(prevLayout['mapbox']['center']['lon'])
-        bearing = float(prevLayout['mapbox']['bearing'])
-    return go.Figure(
-        data=Data([
-            Scattermapbox(
-                lat=new_lat,
-                lon=new_lon,
-                mode='markers',
-                hoverinfo="text",
-                text=new_list,
-                marker=Marker(
-                    color=np.append(np.insert(listStr_index, 0, 0), 23),
-                    colorscale=[[0, "#F4EC15"], [0.04167, "#DAF017"],
-                                [0.0833, "#BBEC19"], [0.125, "9DE81B"],
-                                [0.1667, "#80E41D"], [0.2083, "#66E01F"],
-                                [0.25, "#4CDC20"], [0.292, "#34D822"],
-                                [0.333, "#24D249"], [0.375, "#25D042"],
-                                [0.4167, "#26CC58"], [0.4583, "#28C86D"],
-                                [0.50, "#29C481"], [0.54167, "#2AC093"],
-                                [0.5833, "#2BBCA4"],
-                                [1.0, "#613099"]],
-                    opacity=0.5,
-                    size=15,
-                    colorbar=dict(
-                        thicknessmode="fraction",
-                        title="Time of<br>Day",
-                        x=0.935,
-                        xpad=0,
-                        nticks=24,
-                        tickfont=dict(
-                            color='black'
-                        ),
-                        titlefont=dict(
-                            color='black'
-                        ),
-                        titleside='left'
-                        )
-                ),
-            ),
-        ]),
-        layout=Layout(
-            autosize=True,
-            height=750,
-            margin=Margin(l=0, r=0, t=0, b=0),
-            showlegend=False,
-            mapbox=dict(
-                accesstoken=mapbox_access_token,
-                center=dict(
-                    lat=latInitial, # 40.7272
-                    lon=lonInitial # -73.991251
-                ),
-                style='light',
-                bearing=bearing,
-                zoom=zoom
-            ),
-            updatemenus=[
-                dict(
-                    buttons=([
-                        dict(
-                            args=[{
-                                    'mapbox.zoom': 4,
-                                    'mapbox.center.lon': '79.088860',
-                                    'mapbox.center.lat': '21.146633',
-                                    'mapbox.bearing': 0,
-                                    'mapbox.style': 'light'
-                                }],
-                            label='Reset Zoom',
-                            method='relayout'
-                        )
-                    ]),
-                    direction='left',
-                    pad={'r': 0, 't': 0, 'b': 0, 'l': 0},
-                    showactive=False,
-                    type='buttons',
-                    x=0.45,
-                    xanchor='left',
-                    yanchor='bottom',
-                    bgcolor='white',
-                    borderwidth=1,
-                    bordercolor="#6d6d6d",
-                    font=dict(
-                        color="black"
-                    ),
-                    y=0.02
-                )
-            ]
-        )
-    )
+	mapControls = None
+	zoom = 4.0
+	latInitial = 21.146633
+	lonInitial = 79.088860
+	bearing = 0
+	listStr = get_lat_lon_color(selectedData, value, slider_value)
+	listsOfStr = eval(listStr)['t'].tolist()
+	new_list = []
+	listStr_lat = eval(listStr)['Lat'].tolist()
+	new_lat = []
+	listStr_lon = eval(listStr)['Lon'].tolist()
+	new_lon = []
+	listStr_index = eval(listStr).index.hour
+	to_del = []
+	if (not searchBarInput):
+		# new_list = listsOfStr
+		# new_lon = listStr_lon
+		# new_lat = listStr_lat
+		for i in range(len(listsOfStr)):
+			a = listsOfStr[i]
+			a = preprocessor.clean(a)
+			fl = True
+			for c in curate:
+				if c in a.lower():
+					fl = False
+			if fl==True:
+				new_list.append(a)
+				new_lat.append(listStr_lat[i])
+				new_lon.append(listStr_lon[i])
+			else:
+				to_del.append(i)		
+	else:
+		searchBarInput = searchBarInput.decode('utf-8')
+		searchBarInput = searchBarInput.lower()
+		inputs = searchBarInput.split(',')
+		for i in range(len(listsOfStr)):
+			a = listsOfStr[i]
+			if any(situation in a.lower() for situation in inputs):
+				# clean out tweets: remove urls, reserved words
+				a = preprocessor.clean(a)
+				fl = True
+				for c in curate:
+					if c in a.lower():
+						fl = False
+				if fl==True:
+					new_list.append(a)
+					new_lat.append(listStr_lat[i])
+					new_lon.append(listStr_lon[i])
+			else:
+				to_del.append(i)
+	print len(new_list), 'tweets found! for', searchBarInput
+	# print discarded tweets per character of search
+	for i in to_del:
+		print listsOfStr[i] 
+	if(len(to_del) > 0):
+		np.delete(listStr_index, to_del, axis=0)
+	if(prevLayout is not None and mapControls is not None and
+	   'lock' in mapControls):
+		zoom = float(prevLayout['mapbox']['zoom'])
+		latInitial = float(prevLayout['mapbox']['center']['lat'])
+		lonInitial = float(prevLayout['mapbox']['center']['lon'])
+		bearing = float(prevLayout['mapbox']['bearing'])
+	return go.Figure(
+		data=Data([
+			Scattermapbox(
+				lat=new_lat,
+				lon=new_lon,
+				mode='markers',
+				hoverinfo="text",
+				text=new_list,
+				marker=Marker(
+					color=np.append(np.insert(listStr_index, 0, 0), 23),
+					colorscale=[[0, "#F4EC15"], [0.04167, "#DAF017"],
+								[0.0833, "#BBEC19"], [0.125, "9DE81B"],
+								[0.1667, "#80E41D"], [0.2083, "#66E01F"],
+								[0.25, "#4CDC20"], [0.292, "#34D822"],
+								[0.333, "#24D249"], [0.375, "#25D042"],
+								[0.4167, "#26CC58"], [0.4583, "#28C86D"],
+								[0.50, "#29C481"], [0.54167, "#2AC093"],
+								[0.5833, "#2BBCA4"],
+								[1.0, "#613099"]],
+					opacity=0.5,
+					size=15,
+					colorbar=dict(
+						thicknessmode="fraction",
+						title="Time of<br>Day",
+						x=0.935,
+						xpad=0,
+						nticks=24,
+						tickfont=dict(
+							color='black'
+						),
+						titlefont=dict(
+							color='black'
+						),
+						titleside='left'
+						)
+				),
+			),
+		]),
+		layout=Layout(
+			autosize=True,
+			height=750,
+			margin=Margin(l=0, r=0, t=0, b=0),
+			showlegend=False,
+			mapbox=dict(
+				accesstoken=mapbox_access_token,
+				center=dict(
+					lat=latInitial, # 40.7272
+					lon=lonInitial # -73.991251
+				),
+				style='light',
+				bearing=bearing,
+				zoom=zoom
+			),
+			updatemenus=[
+				dict(
+					buttons=([
+						dict(
+							args=[{
+									'mapbox.zoom': 4,
+									'mapbox.center.lon': '79.088860',
+									'mapbox.center.lat': '21.146633',
+									'mapbox.bearing': 0,
+									'mapbox.style': 'light'
+								}],
+							label='Reset Zoom',
+							method='relayout'
+						)
+					]),
+					direction='left',
+					pad={'r': 0, 't': 0, 'b': 0, 'l': 0},
+					showactive=False,
+					type='buttons',
+					x=0.45,
+					xanchor='left',
+					yanchor='bottom',
+					bgcolor='white',
+					borderwidth=1,
+					bordercolor="#6d6d6d",
+					font=dict(
+						color="black"
+					),
+					y=0.02
+				)
+			]
+		)
+	)
 
 
 external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
-                "//fonts.googleapis.com/css?family=Raleway:400,300,600",
-                "//fonts.googleapis.com/css?family=Dosis:Medium",
-                "https://cdn.rawgit.com/plotly/dash-app-stylesheets/62f0eb4f1fadbefea64b2404493079bf848974e8/dash-uber-ride-demo.css",
-                "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
+				"//fonts.googleapis.com/css?family=Raleway:400,300,600",
+				"//fonts.googleapis.com/css?family=Dosis:Medium",
+				"https://cdn.rawgit.com/plotly/dash-app-stylesheets/62f0eb4f1fadbefea64b2404493079bf848974e8/dash-uber-ride-demo.css",
+				"https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
 
 
 for css in external_css:
-    app.css.append_css({"external_url": css})
+	app.css.append_css({"external_url": css})
 
 @server.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(server.root_path, '/'),
-                                     'favicon.ico')
+	return send_from_directory(os.path.join(server.root_path, '/'),
+									 'favicon.ico')
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+	app.run_server(debug=True)
