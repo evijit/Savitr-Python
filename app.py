@@ -29,6 +29,8 @@ if 'DYNO' in os.environ:
 	})
 
 curate = ['harvey', 'irma', 'sudan', 'nigeria', 'uganda', 'kampala', 'croatia', 'niger', 'manila']
+# google analytics with tracking ID
+external_js = ['https://codepen.io/kaustubhhiware/pen/wmWBeQ.js']
 
 mapbox_access_token = 'pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'
 
@@ -161,6 +163,16 @@ app.layout = html.Div([
 					sortable=True,
 					id='datatable'
 			   )],style={"margin-top": "10px","margin-bottom": "10px"}),
+
+				html.Div([
+					html.Hr(),
+					html.P("Savitr - Disaster Mapping using Twitter", style={'text-align':'center'}),
+					html.A('Scroll to top', href='/#'),
+					html.Div([
+						html.A('Source code and documentation', target='_blank', href='https://github.com/AvijitGhosh82/Savitr-Python'),
+					], style={"float": "right"}),
+					html.Hr(),
+                ]),
 
 			], className="graph twelve coluns"),
 		], style={'margin': 'auto auto'}),
@@ -581,6 +593,9 @@ external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.
 
 for css in external_css:
 	app.css.append_css({"external_url": css})
+
+for js in external_js:
+    app.scripts.append_script({'external_url': js})
 
 @server.route('/favicon.ico')
 def favicon():
