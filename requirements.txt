@@ -7,7 +7,7 @@ dash-renderer==0.7.2
 dash==0.17.4
 decorator==4.0.11
 enum34==1.1.6
-Flask==0.12.2
+Flask==1.0
 Flask-Compress==1.4.0
 Flask-SeaSurf==0.2.2
 functools32==3.2.3.post2
