@@ -35,6 +35,6 @@ six==1.10.0
 traitlets==4.3.2
 tweet-preprocessor==0.5.0
 urllib3==1.21.1
-Werkzeug==0.12.2
+Werkzeug==0.15.3
 wheel==0.26.0
 dash-table-experiments
